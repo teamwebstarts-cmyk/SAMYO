@@ -40,7 +40,7 @@ export const DeleteConfirmModal = {
     const msg = document.getElementById('delete-modal-msg');
 
     if (modal && msg) {
-      msg.innerHTML = `This will permanently remove <strong>${lead.name}</strong> (${lead.company}) and their activity history.`;
+      msg.innerHTML = `This will permanently remove <strong>${lead.name}</strong> ${lead.company ? `(${lead.company}) ` : ''}and their activity history.`;
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }

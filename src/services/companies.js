@@ -7,11 +7,11 @@ export const CompaniesService = {
 
     // Group leads by company
     leads.forEach(lead => {
-      const name = lead.company || 'Unknown Company';
+      const name = (lead.company && lead.company.trim()) ? lead.company.trim() : 'Direct Outreach (No Company)';
       if (!companyMap[name]) {
         companyMap[name] = {
           name,
-          industry: lead.industry || 'SaaS / Tech',
+          industry: lead.industry || 'General Outreach',
           location: lead.location || 'India',
           website: lead.companyWebsite || '',
           contacts: [],
@@ -34,7 +34,7 @@ export const CompaniesService = {
         lead.requirements.forEach(req => companyMap[name].requirements.add(req));
       }
 
-      companyMap[name].potentialValue += (Number(lead.potentialValue) || 100000);
+      companyMap[name].potentialValue += (Number(lead.potentialValue) || 0);
       // Promote status if higher in pipeline
       const stageWeight = { new: 1, request_sent: 2, connected: 3, qualified: 4, proposal: 5, won: 6, lost: 0 };
       if ((stageWeight[lead.status] || 0) > (stageWeight[companyMap[name].status] || 0)) {

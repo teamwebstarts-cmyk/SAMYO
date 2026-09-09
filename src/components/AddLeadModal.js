@@ -7,7 +7,12 @@ export const AddLeadModal = {
       <div id="add-lead-modal" class="modal-overlay" style="display: none;">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h2 class="modal-title">Add New Lead</h2>
+            <div>
+              <h2 class="modal-title">Add New Lead</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                Only name is mandatory. All other details can be skipped or filled later.
+              </p>
+            </div>
             <button type="button" class="btn btn-ghost btn-icon modal-close-btn" data-modal="add-lead-modal">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
@@ -26,12 +31,12 @@ export const AddLeadModal = {
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
-                <label class="form-label" for="lead-designation">Designation</label>
+                <label class="form-label" for="lead-designation">Designation <span class="optional">(Optional)</span></label>
                 <input type="text" id="lead-designation" class="input" placeholder="e.g. Founder / CEO" />
               </div>
               <div class="form-group">
-                <label class="form-label" for="lead-linkedin">LinkedIn Profile URL <span class="required">*</span></label>
-                <input type="url" id="lead-linkedin" class="input" placeholder="https://linkedin.com/in/..." required />
+                <label class="form-label" for="lead-linkedin">LinkedIn Profile URL <span class="optional">(Optional)</span></label>
+                <input type="text" id="lead-linkedin" class="input" placeholder="e.g. linkedin.com/in/..." />
               </div>
             </div>
 
@@ -39,24 +44,25 @@ export const AddLeadModal = {
 
             <!-- Company Information -->
             <div style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px;">
-              Company Information
+              Company Information <span class="optional" style="font-size: 11px; text-transform: none;">(Optional)</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
-                <label class="form-label" for="lead-company">Company Name <span class="required">*</span></label>
-                <input type="text" id="lead-company" class="input" placeholder="e.g. ABC Technologies" required />
+                <label class="form-label" for="lead-company">Company Name <span class="optional">(Optional)</span></label>
+                <input type="text" id="lead-company" class="input" placeholder="e.g. ABC Technologies" />
               </div>
               <div class="form-group">
-                <label class="form-label" for="lead-website">Company Website</label>
-                <input type="url" id="lead-website" class="input" placeholder="https://abc.com" />
+                <label class="form-label" for="lead-website">Company Website <span class="optional">(Optional)</span></label>
+                <input type="text" id="lead-website" class="input" placeholder="e.g. https://abc.com" />
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
-                <label class="form-label" for="lead-industry">Industry</label>
+                <label class="form-label" for="lead-industry">Industry <span class="optional">(Optional)</span></label>
                 <select id="lead-industry" class="select">
+                  <option value="">Select Industry (Optional)</option>
                   <option value="SaaS">SaaS</option>
                   <option value="FinTech">FinTech</option>
                   <option value="EdTech">EdTech</option>
@@ -68,7 +74,7 @@ export const AddLeadModal = {
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label" for="lead-location">Location</label>
+                <label class="form-label" for="lead-location">Location <span class="optional">(Optional)</span></label>
                 <input type="text" id="lead-location" class="input" placeholder="e.g. Jaipur, India" />
               </div>
             </div>
@@ -77,13 +83,13 @@ export const AddLeadModal = {
 
             <!-- Opportunity -->
             <div style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px;">
-              Tech Opportunity & Priority
+              Tech Opportunity & Priority <span class="optional" style="font-size: 11px; text-transform: none;">(Optional)</span>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Service Requirements (Select all that apply)</label>
+              <label class="form-label">Service Requirements <span class="optional">(Optional)</span></label>
               <div class="tag-selector" id="requirement-tag-selector">
-                <span class="tag-option selected" data-value="Website">🌐 Website</span>
+                <span class="tag-option" data-value="Website">🌐 Website</span>
                 <span class="tag-option" data-value="Mobile App">📱 Mobile App</span>
                 <span class="tag-option" data-value="Software">💻 Software</span>
                 <span class="tag-option" data-value="AI/ML">🤖 AI/ML</span>
@@ -102,13 +108,13 @@ export const AddLeadModal = {
                 </div>
               </div>
               <div class="form-group">
-                <label class="form-label" for="lead-value">Potential Deal Value (₹)</label>
-                <input type="number" id="lead-value" class="input" placeholder="100000" step="5000" value="100000" />
+                <label class="form-label" for="lead-value">Potential Deal Value (₹) <span class="optional">(Optional)</span></label>
+                <input type="number" id="lead-value" class="input" placeholder="e.g. 100000" step="5000" />
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="lead-notes">Initial Outreach Notes</label>
+              <label class="form-label" for="lead-notes">Initial Outreach Notes <span class="optional">(Optional)</span></label>
               <textarea id="lead-notes" class="textarea" placeholder="Found on LinkedIn, recently posted about needing a tech partner..."></textarea>
             </div>
 
@@ -139,6 +145,16 @@ export const AddLeadModal = {
       document.body.style.overflow = '';
       const form = document.getElementById('add-lead-form');
       if (form) form.reset();
+      const tagSelector = document.getElementById('requirement-tag-selector');
+      if (tagSelector) {
+        tagSelector.querySelectorAll('.tag-option').forEach(t => t.classList.remove('selected'));
+      }
+      const priorityGroup = document.getElementById('priority-selector');
+      if (priorityGroup) {
+        priorityGroup.querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+        const med = priorityGroup.querySelector('.radio-pill[data-value="medium"]');
+        if (med) med.classList.add('selected');
+      }
     }
   },
 
@@ -185,22 +201,37 @@ export const AddLeadModal = {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        const name = document.getElementById('lead-name').value;
-        const designation = document.getElementById('lead-designation').value;
-        const linkedinUrl = document.getElementById('lead-linkedin').value;
-        const company = document.getElementById('lead-company').value;
-        const companyWebsite = document.getElementById('lead-website').value;
-        const industry = document.getElementById('lead-industry').value;
-        const location = document.getElementById('lead-location').value;
-        const potentialValue = document.getElementById('lead-value').value;
-        const notes = document.getElementById('lead-notes').value;
+        const nameInput = document.getElementById('lead-name');
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) {
+          Toast.show('Please enter the lead full name', 'error');
+          return;
+        }
+
+        const designation = document.getElementById('lead-designation')?.value.trim() || '';
+        let linkedinUrl = document.getElementById('lead-linkedin')?.value.trim() || '';
+        if (linkedinUrl && !/^https?:\/\//i.test(linkedinUrl)) {
+          linkedinUrl = 'https://' + linkedinUrl;
+        }
+
+        const company = document.getElementById('lead-company')?.value.trim() || '';
+        let companyWebsite = document.getElementById('lead-website')?.value.trim() || '';
+        if (companyWebsite && !/^https?:\/\//i.test(companyWebsite)) {
+          companyWebsite = 'https://' + companyWebsite;
+        }
+
+        const industry = document.getElementById('lead-industry')?.value || '';
+        const location = document.getElementById('lead-location')?.value.trim() || '';
+        const potentialValue = document.getElementById('lead-value')?.value;
+        const notes = document.getElementById('lead-notes')?.value.trim() || '';
 
         // Selected tags
-        const selectedTags = Array.from(tagSelector.querySelectorAll('.tag-option.selected'))
-          .map(el => el.getAttribute('data-value'));
+        const selectedTags = tagSelector
+          ? Array.from(tagSelector.querySelectorAll('.tag-option.selected')).map(el => el.getAttribute('data-value'))
+          : [];
 
         // Selected priority
-        const selectedPriority = priorityGroup.querySelector('.radio-pill.selected')?.getAttribute('data-value') || 'medium';
+        const selectedPriority = priorityGroup?.querySelector('.radio-pill.selected')?.getAttribute('data-value') || 'medium';
 
         const createdLead = LeadsService.create({
           name,
@@ -210,9 +241,9 @@ export const AddLeadModal = {
           companyWebsite,
           industry,
           location,
-          requirements: selectedTags.length ? selectedTags : ['Website'],
+          requirements: selectedTags,
           priority: selectedPriority,
-          potentialValue: Number(potentialValue) || 100000,
+          potentialValue: potentialValue ? Number(potentialValue) : 0,
           notes
         });
 

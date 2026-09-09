@@ -10,14 +10,12 @@ import { ScheduleFollowupModal } from './components/ScheduleFollowupModal.js';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal.js';
 
 // Pages
+// Pages
 import { LoginPage } from './pages/Login.js';
 import { DashboardPage } from './pages/Dashboard.js';
 import { PipelinePage } from './pages/Pipeline.js';
-import { LeadsPage } from './pages/Leads.js';
-import { CompaniesPage } from './pages/Companies.js';
-import { FollowUpsPage } from './pages/FollowUps.js';
-import { AnalyticsPage } from './pages/Analytics.js';
 import { SettingsPage } from './pages/Settings.js';
+
 
 class App {
   constructor() {
@@ -29,10 +27,6 @@ class App {
       '/login': LoginPage,
       '/dashboard': DashboardPage,
       '/pipeline': PipelinePage,
-      '/leads': LeadsPage,
-      '/companies': CompaniesPage,
-      '/followups': FollowUpsPage,
-      '/analytics': AnalyticsPage,
       '/settings': SettingsPage
     };
 

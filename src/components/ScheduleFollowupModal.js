@@ -20,7 +20,7 @@ export const ScheduleFollowupModal = {
             <div class="form-group">
               <label class="form-label" for="followup-lead">Select Lead <span class="required">*</span></label>
               <select id="followup-lead" class="select" required>
-                ${leads.map(l => `<option value="${l.id}" data-name="${l.name}" data-company="${l.company}" data-linkedin="${l.linkedinUrl}">${l.name} (${l.company})</option>`).join('')}
+                ${leads.map(l => `<option value="${l.id}" data-name="${l.name}" data-company="${l.company || ''}" data-linkedin="${l.linkedinUrl || ''}">${l.name}${l.company ? ` (${l.company})` : ''}</option>`).join('')}
               </select>
             </div>
 

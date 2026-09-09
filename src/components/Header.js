@@ -19,7 +19,7 @@ export const Header = {
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="global-search-input" class="input" placeholder="Search leads, companies, founders..." />
+            <input type="text" id="global-search-input" class="input" placeholder="Search Leaderboard..." />
           </div>
         </div>
 
@@ -120,7 +120,7 @@ export const Header = {
       searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           const query = encodeURIComponent(searchInput.value.trim());
-          window.location.hash = `#/leads?q=${query}`;
+          window.location.hash = `#/pipeline`;
         }
       });
     }

@@ -26,8 +26,8 @@ export const LeadCard = {
   },
 
   render(lead) {
-    const initials = lead.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    const requirements = Array.isArray(lead.requirements) ? lead.requirements : ['Website'];
+    const initials = (lead.name || 'L').split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L';
+    const requirements = Array.isArray(lead.requirements) ? lead.requirements : [];
     const timeAgo = this.formatTimeAgo(lead.addedDate);
 
     let priorityBadge = '';
@@ -46,8 +46,8 @@ export const LeadCard = {
           <div class="lead-card-name" title="${lead.name}">${lead.name}</div>
         </div>
 
-        <div class="lead-card-company" title="${lead.company}">${lead.company}</div>
-        <div class="lead-card-designation" title="${lead.designation}">${lead.designation || 'Founder'}</div>
+        <div class="lead-card-company" title="${lead.company || 'Direct Outreach'}">${lead.company || '—'}</div>
+        <div class="lead-card-designation" title="${lead.designation || 'Prospect'}">${lead.designation || 'Prospect'}</div>
 
         <div class="lead-card-tags">
           ${requirements.slice(0, 2).map(req => `

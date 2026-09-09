@@ -15,10 +15,10 @@ export const DashboardPage = {
             <p>Here's your LinkedIn outreach progress and team performance overview.</p>
           </div>
           <div style="display: flex; gap: 10px;">
-            <button class="btn btn-secondary" onclick="window.location.hash='#/followups'">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-              View Follow-ups
-            </button>
+           <button class="btn btn-secondary" onclick="window.location.hash='#/pipeline'">
+  View Leaderboard →
+</button>
+
             <button class="btn btn-primary" id="btn-dash-add-lead">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                Add Lead
@@ -38,7 +38,7 @@ export const DashboardPage = {
             </div>
             <div class="kpi-value-row">
               <div class="kpi-value">${stats.totalLeads}</div>
-              <div class="kpi-trend">↑ 12%</div>
+             
             </div>
           </div>
 
@@ -52,7 +52,7 @@ export const DashboardPage = {
             </div>
             <div class="kpi-value-row">
               <div class="kpi-value">${stats.connections}</div>
-              <div class="kpi-trend">↑ 8%</div>
+            
             </div>
           </div>
 
@@ -66,7 +66,7 @@ export const DashboardPage = {
             </div>
             <div class="kpi-value-row">
               <div class="kpi-value">${stats.proposals}</div>
-              <div class="kpi-trend">↑ 20%</div>
+             
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export const DashboardPage = {
             </div>
             <div class="kpi-value-row">
               <div class="kpi-value">${stats.won}</div>
-              <div class="kpi-trend">↑ 25%</div>
+            
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export const DashboardPage = {
           <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <h3 class="section-heading" style="font-size: 16px;">Pipeline Breakdown</h3>
+                <h3 class="section-heading" style="font-size: 16px;">Leaderboard Breakdown</h3>
                 <a href="#/pipeline" style="font-size: 12px; color: var(--primary); font-weight: 600;">Open Board →</a>
               </div>
 
@@ -172,29 +172,29 @@ export const DashboardPage = {
                     <span style="font-weight: 600;">${stats.breakdown.newLeads}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 90%; background: #64748B; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.newLeads / stats.totalLeads) * 100 : 0}%; background: #64748B; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
 
                 <!-- Requests -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 4px;">
-                    <span style="color: #B45309;">Requests Sent</span>
+                    <span style="color: #4F46E5;">Requests Sent</span>
                     <span style="font-weight: 600;">${stats.breakdown.requests}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 70%; background: #F59E0B; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.requests / stats.totalLeads) * 100 : 0}%; background: #6366F1; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
 
                 <!-- Connected -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 4px;">
-                    <span style="color: #4F46E5;">Connected</span>
+                    <span style="color: #059669;">Connected</span>
                     <span style="font-weight: 600;">${stats.breakdown.connected}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 50%; background: #6366F1; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.connected / stats.totalLeads) * 100 : 0}%; background: #10B981; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
 
@@ -205,7 +205,7 @@ export const DashboardPage = {
                     <span style="font-weight: 600;">${stats.breakdown.qualified}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 35%; background: #8B5CF6; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.qualified / stats.totalLeads) * 100 : 0}%; background: #8B5CF6; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
 
@@ -216,7 +216,7 @@ export const DashboardPage = {
                     <span style="font-weight: 600;">${stats.breakdown.proposal}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 22%; background: #0284C7; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.proposal / stats.totalLeads) * 100 : 0}%; background: #0284C7; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
 
@@ -227,14 +227,14 @@ export const DashboardPage = {
                     <span style="font-weight: 600;">${stats.breakdown.won}</span>
                   </div>
                   <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: 15%; background: #16A34A; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: ${stats.totalLeads > 0 ? (stats.breakdown.won / stats.totalLeads) * 100 : 0}%; background: #16A34A; border-radius: 3px; transition: width 0.3s ease;"></div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div style="background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 12px; font-size: 12px; color: var(--text-secondary);">
-              🎯 <strong>Overall Win Rate:</strong> 62% from proposal stage
+              🎯 <strong>Overall Win Rate:</strong> ${stats.totalLeads > 0 ? Math.round((stats.won / stats.totalLeads) * 100) : 0}% (${stats.won} of ${stats.totalLeads} Won)
             </div>
           </div>
         </div>

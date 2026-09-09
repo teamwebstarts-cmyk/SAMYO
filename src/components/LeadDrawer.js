@@ -36,26 +36,28 @@ export const LeadDrawer = {
 
     if (!drawer || !backdrop || !content) return;
 
-    const initials = lead.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    const requirements = Array.isArray(lead.requirements) ? lead.requirements : ['Website'];
+    const initials = (lead.name || 'L').split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L';
+    const requirements = Array.isArray(lead.requirements) ? lead.requirements : [];
 
     content.innerHTML = `
       <div class="drawer-profile-banner">
         <div class="drawer-avatar">${initials}</div>
         <div class="drawer-profile-text">
           <h2>${lead.name}</h2>
-          <p>${lead.designation || 'Contact'} @ ${lead.company}</p>
+          <p>${lead.designation || 'Prospect'}${lead.company ? ` @ ${lead.company}` : ''}</p>
         </div>
       </div>
 
+      ${lead.linkedinUrl ? `
       <div style="margin-bottom: 20px;">
-        <a href="${lead.linkedinUrl || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 8px;">
+        <a href="${lead.linkedinUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#0A66C2">
             <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28z"/>
           </svg>
           Open LinkedIn Profile
         </a>
       </div>
+      ` : ''}
 
       <div class="drawer-field-grid">
         <div class="drawer-field">
@@ -73,13 +75,15 @@ export const LeadDrawer = {
 
         <div class="drawer-field">
           <span class="drawer-field-label">Company</span>
-          <div class="drawer-field-value">${lead.company} ${lead.companyWebsite ? `<a href="${lead.companyWebsite}" target="_blank" style="font-size: 12px; color: var(--primary); margin-left: 6px;">(${lead.companyWebsite.replace(/^https?:\/\//, '')})</a>` : ''}</div>
+          <div class="drawer-field-value">${lead.company || '<span style="color: var(--text-muted); font-style: italic;">Not specified</span>'} ${lead.companyWebsite ? `<a href="${lead.companyWebsite}" target="_blank" style="font-size: 12px; color: var(--primary); margin-left: 6px;">(${lead.companyWebsite.replace(/^https?:\/\//, '')})</a>` : ''}</div>
         </div>
 
         <div class="drawer-field">
           <span class="drawer-field-label">Tech Requirement</span>
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
-            ${requirements.map(req => `<span class="tag-chip" style="font-size: 12px; padding: 4px 8px;">${req}</span>`).join('')}
+            ${requirements.length > 0
+              ? requirements.map(req => `<span class="tag-chip" style="font-size: 12px; padding: 4px 8px;">${req}</span>`).join('')
+              : '<span style="color: var(--text-muted); font-size: 13px; font-style: italic;">None specified</span>'}
           </div>
         </div>
 
@@ -93,7 +97,7 @@ export const LeadDrawer = {
           <div class="drawer-field">
             <span class="drawer-field-label">Potential Value</span>
             <div class="drawer-field-value" style="color: #4F46E5; font-weight: 600;">
-              ₹${(lead.potentialValue || 100000).toLocaleString('en-IN')}
+              ${lead.potentialValue ? `₹${Number(lead.potentialValue).toLocaleString('en-IN')}` : '<span style="color: var(--text-muted); font-size: 13px; font-weight: normal;">Not specified</span>'}
             </div>
           </div>
         </div>

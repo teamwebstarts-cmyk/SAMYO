@@ -12,19 +12,20 @@ export const LeadsService = {
 
   create(data) {
     const leads = this.getAll();
+    const company = (data.company && typeof data.company === 'string') ? data.company.trim() : '';
     const newLead = {
       id: 'lead-' + Date.now(),
-      name: data.name.trim(),
-      company: data.company.trim(),
-      designation: data.designation ? data.designation.trim() : 'Decision Maker',
-      linkedinUrl: data.linkedinUrl ? data.linkedinUrl.trim() : '#',
-      companyWebsite: data.companyWebsite ? data.companyWebsite.trim() : '',
-      industry: data.industry || 'Tech / Software',
-      location: data.location || 'India',
-      requirements: data.requirements || ['Website'],
+      name: (data.name && typeof data.name === 'string') ? data.name.trim() : 'Unnamed Lead',
+      company: company,
+      designation: (data.designation && typeof data.designation === 'string') ? data.designation.trim() : '',
+      linkedinUrl: (data.linkedinUrl && typeof data.linkedinUrl === 'string') ? data.linkedinUrl.trim() : '',
+      companyWebsite: (data.companyWebsite && typeof data.companyWebsite === 'string') ? data.companyWebsite.trim() : '',
+      industry: data.industry || '',
+      location: (data.location && typeof data.location === 'string') ? data.location.trim() : '',
+      requirements: Array.isArray(data.requirements) ? data.requirements : [],
       priority: data.priority || 'medium',
       status: 'new',
-      potentialValue: Number(data.potentialValue) || 100000,
+      potentialValue: Number(data.potentialValue) || 0,
       addedDate: new Date().toISOString(),
       notes: data.notes ? [{
         id: 'n-' + Date.now(),
@@ -44,7 +45,8 @@ export const LeadsService = {
     StorageService.set(StorageService.KEYS.LEADS, leads);
 
     // Record in global activities
-    this.recordGlobalActivity(`${newLead.name} (${newLead.company}) added as New Lead`, 'new');
+    const companyLabel = newLead.company ? ` (${newLead.company})` : '';
+    this.recordGlobalActivity(`${newLead.name}${companyLabel} added as New Lead`, 'new');
 
     return newLead;
   },
@@ -166,11 +168,11 @@ export const LeadsService = {
     });
 
     // We blend sample dataset dynamic counts with realistic benchmark baseline
-    const baseOffset = 117; // gives 126 total leads
-    const totalLeads = leads.length + baseOffset;
-    const connections = countByStatus.connected + 46;
-    const proposals = countByStatus.proposal + 11;
-    const won = countByStatus.won + 4;
+      // 100% Real dynamic counts directly from leads data
+    const totalLeads = leads.length;
+    const connections = countByStatus.connected || 0;
+    const proposals = countByStatus.proposal || 0;
+    const won = countByStatus.won || 0;
 
     return {
       totalLeads,
@@ -178,15 +180,16 @@ export const LeadsService = {
       proposals,
       won,
       breakdown: {
-        newLeads: countByStatus.new + 50,
-        requests: countByStatus.request_sent + 37,
-        connected: countByStatus.connected + 22,
-        qualified: countByStatus.qualified + 14,
-        proposal: countByStatus.proposal + 7,
-        won: countByStatus.won + 4,
-        lost: countByStatus.lost + 2
+        newLeads: countByStatus.new || 0,
+        requests: countByStatus.request_sent || 0,
+        connected: countByStatus.connected || 0,
+        qualified: countByStatus.qualified || 0,
+        proposal: countByStatus.proposal || 0,
+        won: countByStatus.won || 0,
+        lost: countByStatus.lost || 0
       },
       actualCounts: countByStatus
     };
+
   }
 };

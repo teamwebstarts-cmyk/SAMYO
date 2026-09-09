@@ -18,9 +18,9 @@ export const FollowUpsService = {
     const newFollowup = {
       id: 'f-' + Date.now(),
       leadId: data.leadId || '',
-      leadName: data.leadName.trim(),
-      company: data.company.trim(),
-      task: data.task.trim(),
+      leadName: (data.leadName && typeof data.leadName === 'string') ? data.leadName.trim() : 'Lead',
+      company: (data.company && typeof data.company === 'string') ? data.company.trim() : '',
+      task: (data.task && typeof data.task === 'string') ? data.task.trim() : '',
       dueDate: data.dueDate || new Date().toISOString(),
       dueLabel: data.dueLabel || 'Upcoming',
       category: data.category || 'upcoming',
