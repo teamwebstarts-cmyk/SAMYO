@@ -27,7 +27,8 @@ export const LeadsService = {
 
   async create(data) {
     const leads = this.getAll();
-    const company = (data.company && typeof data.company === 'string') ? data.company.trim() : '';
+    const rawCompany = (data.company && typeof data.company === 'string') ? data.company.trim() : '';
+    const company = rawCompany || 'Individual';
     const tempId = 'lead-' + Date.now();
 
     const newLead = {
@@ -58,22 +59,23 @@ export const LeadsService = {
       }]
     };
 
-    // Persist to MongoDB Atlas cloud database
+    // 1. Persist directly to MongoDB Atlas cloud database
     try {
       const savedLead = await ApiService.post('/leads', newLead);
       if (savedLead && (savedLead.id || savedLead._id)) {
         newLead.id = savedLead.id || savedLead._id;
       }
     } catch (err) {
-      console.warn('MongoDB cloud save warning (saving locally):', err.message);
+      console.error('MongoDB cloud save failed:', err.message);
+      throw new Error(`Cloud save failed: ${err.message}`);
     }
 
-    // Save to local storage cache
+    // 2. Save to local storage cache only after successful cloud save
     leads.unshift(newLead);
     StorageService.set(StorageService.KEYS.LEADS, leads);
 
-    // Record in global activities
-    const companyLabel = newLead.company ? ` (${newLead.company})` : '';
+    // 3. Record in global activities
+    const companyLabel = newLead.company && newLead.company !== 'Individual' ? ` (${newLead.company})` : '';
     this.recordGlobalActivity(`${newLead.name}${companyLabel} added as New Lead`, 'new');
 
     return newLead;
