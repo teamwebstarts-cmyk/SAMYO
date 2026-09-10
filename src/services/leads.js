@@ -1,20 +1,37 @@
 import { StorageService } from './storage.js';
+import { ApiService } from './api.js';
 
 export const LeadsService = {
+  // Sync leads with MongoDB Atlas cloud database
+  async syncWithServer() {
+    try {
+      const serverLeads = await ApiService.get('/leads');
+      if (Array.isArray(serverLeads) && serverLeads.length > 0) {
+        StorageService.set(StorageService.KEYS.LEADS, serverLeads);
+        return serverLeads;
+      }
+    } catch (err) {
+      console.warn('Could not sync with MongoDB server, using local cache:', err.message);
+    }
+    return this.getAll();
+  },
+
   getAll() {
     return StorageService.get(StorageService.KEYS.LEADS, []);
   },
 
   getById(id) {
     const leads = this.getAll();
-    return leads.find(l => l.id === id) || null;
+    return leads.find(l => l.id === id || l._id === id) || null;
   },
 
   create(data) {
     const leads = this.getAll();
     const company = (data.company && typeof data.company === 'string') ? data.company.trim() : '';
+    const tempId = 'lead-' + Date.now();
+
     const newLead = {
-      id: 'lead-' + Date.now(),
+      id: tempId,
       name: (data.name && typeof data.name === 'string') ? data.name.trim() : 'Unnamed Lead',
       company: company,
       designation: (data.designation && typeof data.designation === 'string') ? data.designation.trim() : '',
@@ -41,23 +58,46 @@ export const LeadsService = {
       }]
     };
 
+    // 1. Instant local persistence for zero lag UI
     leads.unshift(newLead);
     StorageService.set(StorageService.KEYS.LEADS, leads);
 
-    // Record in global activities
+    // 2. Record in global activities
     const companyLabel = newLead.company ? ` (${newLead.company})` : '';
     this.recordGlobalActivity(`${newLead.name}${companyLabel} added as New Lead`, 'new');
+
+    // 3. Persist to MongoDB Atlas cloud database in background
+    ApiService.post('/leads', newLead)
+      .then(savedLead => {
+        if (savedLead && (savedLead.id || savedLead._id)) {
+          const currentLeads = this.getAll();
+          const target = currentLeads.find(l => l.id === tempId);
+          if (target) {
+            target.id = savedLead.id || savedLead._id;
+            StorageService.set(StorageService.KEYS.LEADS, currentLeads);
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('Background MongoDB save warning:', err.message);
+      });
 
     return newLead;
   },
 
   update(id, updates) {
     const leads = this.getAll();
-    const index = leads.findIndex(l => l.id === id);
+    const index = leads.findIndex(l => l.id === id || l._id === id);
     if (index === -1) return null;
 
     leads[index] = { ...leads[index], ...updates };
     StorageService.set(StorageService.KEYS.LEADS, leads);
+
+    // Persist to MongoDB
+    ApiService.put(`/leads/${id}`, updates).catch(err => {
+      console.warn('MongoDB update warning:', err.message);
+    });
+
     return leads[index];
   },
 
@@ -99,6 +139,11 @@ export const LeadsService = {
       newStatus
     );
 
+    // Persist status change to MongoDB
+    ApiService.patch(`/leads/${id}/status`, { status: newStatus, ...extra }).catch(err => {
+      console.warn('MongoDB status update warning:', err.message);
+    });
+
     return updated;
   },
 
@@ -114,7 +159,14 @@ export const LeadsService = {
     };
 
     const notes = [newNote, ...(lead.notes || [])];
-    return this.update(id, { notes });
+    const updated = this.update(id, { notes });
+
+    // Persist note to MongoDB
+    ApiService.post(`/leads/${id}/notes`, { text: noteText.trim(), author: 'Neha Jain' }).catch(err => {
+      console.warn('MongoDB note save warning:', err.message);
+    });
+
+    return updated;
   },
 
   addActivity(id, activityTitle) {
@@ -133,8 +185,14 @@ export const LeadsService = {
   },
 
   delete(id) {
-    const leads = this.getAll().filter(l => l.id !== id);
+    const leads = this.getAll().filter(l => l.id !== id && l._id !== id);
     StorageService.set(StorageService.KEYS.LEADS, leads);
+
+    // Persist deletion to MongoDB
+    ApiService.delete(`/leads/${id}`).catch(err => {
+      console.warn('MongoDB delete warning:', err.message);
+    });
+
     return true;
   },
 
@@ -167,8 +225,6 @@ export const LeadsService = {
       }
     });
 
-    // We blend sample dataset dynamic counts with realistic benchmark baseline
-      // 100% Real dynamic counts directly from leads data
     const totalLeads = leads.length;
     const connections = countByStatus.connected || 0;
     const proposals = countByStatus.proposal || 0;
@@ -190,6 +246,5 @@ export const LeadsService = {
       },
       actualCounts: countByStatus
     };
-
   }
 };

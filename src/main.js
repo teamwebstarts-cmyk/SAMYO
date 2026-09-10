@@ -1,5 +1,6 @@
 import { AuthService } from './services/auth.js';
 import { StorageService } from './services/storage.js';
+import { LeadsService } from './services/leads.js';
 import { Header } from './components/Header.js';
 import { Sidebar } from './components/Sidebar.js';
 import { MobileNav } from './components/MobileNav.js';
@@ -36,6 +37,13 @@ class App {
   init() {
     // Ensure seed data is ready
     StorageService.init();
+
+    // Sync fresh leads from MongoDB Atlas cloud database
+    LeadsService.syncWithServer().then(() => {
+      if (this.currentRoute === '/dashboard' || this.currentRoute === '/pipeline') {
+        this.renderCurrentView();
+      }
+    });
 
     // Mount permanent modal & drawer containers
     this.mountModals();

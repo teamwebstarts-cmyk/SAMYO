@@ -64,12 +64,30 @@ export const LoginPage = {
     }
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
-        AuthService.login(email, 'password');
-        Toast.show('Welcome back, Neha! 👋');
-        window.location.hash = '#/dashboard';
+        const password = pwdInput ? pwdInput.value : 'password';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Signing In...';
+        }
+
+        try {
+          const res = await AuthService.login(email, password);
+          const userName = res.user?.name || 'Neha';
+          Toast.show(`Welcome back, ${userName}! 👋`);
+          window.location.hash = '#/dashboard';
+        } catch (err) {
+          Toast.show(err.message || 'Login failed', 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In to TechCRM';
+          }
+        }
       });
     }
   }
