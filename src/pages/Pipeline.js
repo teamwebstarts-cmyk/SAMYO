@@ -76,7 +76,7 @@ export const PipelinePage = {
         <div class="page-header">
           <div class="page-title-group">
             <h1>Leaderboard</h1>
-            <p>Jira-style relationship pipeline: Discovery → Connection → Conversation → Proposal → Won</p>
+            <p>Discovery → Connection → Conversation → Proposal → Won</p>
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center;">
@@ -100,17 +100,13 @@ export const PipelinePage = {
 
                 <div style="border-top: 1px solid var(--border-subtle); margin: 14px 0 12px;"></div>
 
-                <!-- Add New Column Form with Position Selector -->
+                                <!-- Add New Column Form -->
                 <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Add New Column</div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <input type="text" id="input-new-column-name" class="input" placeholder="Column name (e.g. In Review)..." style="font-size: 12px; padding: 6px 10px; height: 32px;" />
-                  <div style="display: flex; gap: 6px;">
-                    <select id="select-new-column-position" class="select" style="font-size: 12px; padding: 4px 8px; height: 32px; flex: 1;">
-                      <!-- Dynamically populated positions -->
-                    </select>
-                    <button id="btn-submit-new-column" class="btn btn-primary" style="font-size: 12px; padding: 0 12px; height: 32px; white-space: nowrap;">+ Add</button>
-                  </div>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="input-new-column-name" class="input" placeholder="Column name (e.g. In Review)..." style="font-size: 12px; padding: 6px 10px; height: 32px; flex: 1;" />
+                  <button id="btn-submit-new-column" class="btn btn-primary" style="font-size: 12px; padding: 0 14px; height: 32px; white-space: nowrap;">+ Add</button>
                 </div>
+
               </div>
             </div>
 
@@ -296,22 +292,8 @@ export const PipelinePage = {
       const newId = 'stage_' + Date.now();
       const newStage = { id: newId, name, visible: true };
       const stages = this.getStages();
-      const posSelect = document.getElementById('select-new-column-position');
-      const position = posSelect ? posSelect.value : 'end';
+      stages.push(newStage);
 
-      if (position === 'start') {
-        stages.unshift(newStage);
-      } else if (position.startsWith('after_')) {
-        const targetId = position.replace('after_', '');
-        const targetIdx = stages.findIndex(s => s.id === targetId);
-        if (targetIdx !== -1) {
-          stages.splice(targetIdx + 1, 0, newStage);
-        } else {
-          stages.push(newStage);
-        }
-      } else {
-        stages.push(newStage);
-      }
 
       StorageService.set(StorageService.KEYS.PIPELINE_STAGES, stages);
 
@@ -337,35 +319,89 @@ export const PipelinePage = {
     if (!container) return;
 
     const stages = this.getStages();
+    // Default columns jinhe delete nahi kiya ja sakta
+    const DEFAULT_STAGE_IDS = ['new', 'request_sent', 'connected', 'qualified', 'proposal', 'won'];
 
-    // 1. Render Columns List with Checkbox, Move Up/Down, and Delete
-    container.innerHTML = stages.map((stage, index) => `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; font-size: 13px; background: #F8FAFC; border: 1px solid var(--border-subtle);">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; user-select: none; margin-right: 8px; overflow: hidden;">
-          <input type="checkbox" class="column-visibility-toggle" data-stage-id="${stage.id}" ${stage.visible !== false ? 'checked' : ''} style="cursor: pointer;" />
-          <span style="color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${stage.name}</span>
-        </label>
-        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-          <button class="btn-move-col-up" data-index="${index}" title="Move left" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; color: var(--text-secondary);" ${index === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed; width: 22px; height: 22px;"' : ''}>↑</button>
-          <button class="btn-move-col-down" data-index="${index}" title="Move right" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; color: var(--text-secondary);" ${index === stages.length - 1 ? 'disabled style="opacity:0.3; cursor:not-allowed; width: 22px; height: 22px;"' : ''}>↓</button>
-          <button class="btn-delete-column" data-stage-id="${stage.id}" title="Delete column" style="background: #FEE2E2; border: 1px solid #FECACA; border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; color: #DC2626; cursor: pointer; font-size: 12px; font-weight: bold;">✕</button>
+    // 1. Render Columns List with Drag Handle (⠿), Checkbox, and Conditional Delete
+    container.innerHTML = stages.map((stage, index) => {
+      const isDefault = DEFAULT_STAGE_IDS.includes(stage.id);
+
+      return `
+        <div class="col-drag-item" draggable="true" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; font-size: 13px; background: #F8FAFC; border: 1px solid var(--border-subtle); cursor: grab; user-select: none; transition: background 0.15s ease;">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden;">
+            <!-- Drag & Drop Handle Icon -->
+            <span title="Drag to reorder" style="color: var(--text-muted); font-size: 14px; cursor: grab; padding: 0 2px;">⠿</span>
+            
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; margin: 0; overflow: hidden;">
+              <input type="checkbox" class="column-visibility-toggle" data-stage-id="${stage.id}" ${stage.visible !== false ? 'checked' : ''} style="cursor: pointer;" />
+              <span style="color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${stage.name}
+              </span>
+            </label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+            <!-- Move Up / Down Buttons (Alternative to Drag) -->
+            <button class="btn-move-col-up" data-index="${index}" title="Move up" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; color: var(--text-secondary);" ${index === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed; width: 22px; height: 22px;"' : ''}>↑</button>
+            <button class="btn-move-col-down" data-index="${index}" title="Move down" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; color: var(--text-secondary);" ${index === stages.length - 1 ? 'disabled style="opacity:0.3; cursor:not-allowed; width: 22px; height: 22px;"' : ''}>↓</button>
+            
+            <!-- Delete Button: SIRF custom added columns ke liye dikhega, default columns ke liye nahi -->
+            ${!isDefault ? `
+              <button class="btn-delete-column" data-stage-id="${stage.id}" title="Delete column" style="background: #FEE2E2; border: 1px solid #FECACA; border-radius: 4px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; color: #DC2626; cursor: pointer; font-size: 12px; font-weight: bold;">✕</button>
+            ` : ''}
+          </div>
         </div>
-      </div>
-    `).join('');
-
-    // 2. Populate the Position Dropdown dynamically
-    const posSelect = document.getElementById('select-new-column-position');
-    if (posSelect) {
-      posSelect.innerHTML = `
-        <option value="end">Position: At the end</option>
-        <option value="start">Position: At the beginning</option>
-        ${stages.map(s => `
-          <option value="after_${s.id}">Position: After "${s.name}"</option>
-        `).join('')}
       `;
-    }
+    }).join('');
 
-    // Checkbox toggling
+    // 3. Drag and Drop Listeners for Columns Reordering
+    let draggedColIndex = null;
+    const dragItems = container.querySelectorAll('.col-drag-item');
+
+    dragItems.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedColIndex = parseInt(item.getAttribute('data-index'), 10);
+        e.dataTransfer.effectAllowed = 'move';
+        item.style.opacity = '0.4';
+      });
+
+      item.addEventListener('dragend', () => {
+        item.style.opacity = '1';
+        dragItems.forEach(el => {
+          el.style.borderTop = '1px solid var(--border-subtle)';
+          el.style.background = '#F8FAFC';
+        });
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        item.style.background = '#EEF2FF';
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.style.background = '#F8FAFC';
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.style.background = '#F8FAFC';
+        const targetIndex = parseInt(item.getAttribute('data-index'), 10);
+
+        if (draggedColIndex !== null && draggedColIndex !== targetIndex) {
+          const currentStages = this.getStages();
+          const [movedItem] = currentStages.splice(draggedColIndex, 1);
+          currentStages.splice(targetIndex, 0, movedItem);
+
+          StorageService.set(StorageService.KEYS.PIPELINE_STAGES, currentStages);
+          this.renderColumnCheckboxes();
+          this.refreshBoard();
+          Toast.show(`✓ Column moved to position ${targetIndex + 1}`);
+        }
+      });
+    });
+
+    // 4. Checkbox toggling
     container.querySelectorAll('.column-visibility-toggle').forEach(cb => {
       cb.addEventListener('change', (e) => {
         const stageId = cb.getAttribute('data-stage-id');
@@ -379,7 +415,7 @@ export const PipelinePage = {
       });
     });
 
-    // Move column left/up
+    // 5. Move column Up
     container.querySelectorAll('.btn-move-col-up').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -396,7 +432,7 @@ export const PipelinePage = {
       });
     });
 
-    // Move column right/down
+    // 6. Move column Down
     container.querySelectorAll('.btn-move-col-down').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -413,16 +449,18 @@ export const PipelinePage = {
       });
     });
 
-    // Delete ANY column
+    // 7. Delete Custom Column
     container.querySelectorAll('.btn-delete-column').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const stageId = btn.getAttribute('data-stage-id');
         let currentStages = this.getStages();
-        if (currentStages.length <= 1) {
-          Toast.show('At least one column is required');
+
+        if (DEFAULT_STAGE_IDS.includes(stageId)) {
+          Toast.show('Default columns cannot be deleted', 'warning');
           return;
         }
+
         const stageName = currentStages.find(s => s.id === stageId)?.name || 'Column';
         currentStages = currentStages.filter(s => s.id !== stageId);
         StorageService.set(StorageService.KEYS.PIPELINE_STAGES, currentStages);
@@ -432,6 +470,7 @@ export const PipelinePage = {
       });
     });
   },
+
 
   bindKanbanInteractions() {
     const container = document.getElementById('app');
