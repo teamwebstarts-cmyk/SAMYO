@@ -22,12 +22,18 @@ export const Sidebar = {
 
     return `
       <aside class="sidebar">
-        <div class="sidebar-header">
+                <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; position: relative;">
           <a href="#/dashboard" class="brand-logo">
             <div class="brand-icon">🚀</div>
             <span class="brand-text">TechCRM</span>
           </a>
+          <button id="btn-toggle-sidebar" class="sidebar-toggle-btn" title="Toggle Sidebar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
         </div>
+
 
         <nav class="sidebar-nav">
           ${navItems.map(item => `
@@ -63,5 +69,15 @@ export const Sidebar = {
         </div>
       </aside>
     `;
+  },
+   initListeners() {
+    const toggleBtn = document.getElementById('btn-toggle-sidebar');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('sidebar-collapsed');
+        const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+        localStorage.setItem('techcrm_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+      });
+    }
   }
 };

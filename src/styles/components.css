@@ -397,6 +397,61 @@
   font-size: 16px;
   box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
 }
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.sidebar-toggle-btn:hover {
+  background: #F8FAFC;
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+
+/* ==========================================================================
+   Sidebar Collapsed Mode (Icon-Only Mode)
+   ========================================================================== */
+body.sidebar-collapsed .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+body.sidebar-collapsed .brand-text,
+body.sidebar-collapsed .nav-link-text,
+body.sidebar-collapsed .nav-link-badge,
+body.sidebar-collapsed .sidebar-outreach-card,
+body.sidebar-collapsed .sidebar-footer {
+  display: none !important;
+}
+
+body.sidebar-collapsed .sidebar-header {
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 0;
+  gap: 8px;
+}
+
+body.sidebar-collapsed .sidebar-toggle-btn svg {
+  transform: rotate(180deg); /* Arrow points right: ▶ */
+}
+
+body.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+body.sidebar-collapsed .main-wrapper {
+  margin-left: var(--sidebar-collapsed-width);
+}
 
 .sidebar-nav {
   padding: var(--space-16) var(--space-12);

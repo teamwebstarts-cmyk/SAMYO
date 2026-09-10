@@ -37,6 +37,10 @@ class App {
   init() {
     // Ensure seed data is ready
     StorageService.init();
+    // Restore sidebar collapsed preference
+    if (localStorage.getItem('techcrm_sidebar_collapsed') === 'true') {
+      document.body.classList.add('sidebar-collapsed');
+    }
 
     // Sync fresh leads from MongoDB Atlas cloud database
     LeadsService.syncWithServer().then(() => {
@@ -152,6 +156,8 @@ class App {
 
     // Initialize listeners
     Header.initListeners();
+    Sidebar.initListeners();
+
     if (pageComponent.initListeners) {
       pageComponent.initListeners();
     }
