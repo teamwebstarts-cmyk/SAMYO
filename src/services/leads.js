@@ -25,7 +25,7 @@ export const LeadsService = {
     return leads.find(l => l.id === id || l._id === id) || null;
   },
 
-  create(data) {
+  async create(data) {
     const leads = this.getAll();
     const company = (data.company && typeof data.company === 'string') ? data.company.trim() : '';
     const tempId = 'lead-' + Date.now();
@@ -58,29 +58,23 @@ export const LeadsService = {
       }]
     };
 
-    // 1. Instant local persistence for zero lag UI
+    // Persist to MongoDB Atlas cloud database
+    try {
+      const savedLead = await ApiService.post('/leads', newLead);
+      if (savedLead && (savedLead.id || savedLead._id)) {
+        newLead.id = savedLead.id || savedLead._id;
+      }
+    } catch (err) {
+      console.warn('MongoDB cloud save warning (saving locally):', err.message);
+    }
+
+    // Save to local storage cache
     leads.unshift(newLead);
     StorageService.set(StorageService.KEYS.LEADS, leads);
 
-    // 2. Record in global activities
+    // Record in global activities
     const companyLabel = newLead.company ? ` (${newLead.company})` : '';
     this.recordGlobalActivity(`${newLead.name}${companyLabel} added as New Lead`, 'new');
-
-    // 3. Persist to MongoDB Atlas cloud database in background
-    ApiService.post('/leads', newLead)
-      .then(savedLead => {
-        if (savedLead && (savedLead.id || savedLead._id)) {
-          const currentLeads = this.getAll();
-          const target = currentLeads.find(l => l.id === tempId);
-          if (target) {
-            target.id = savedLead.id || savedLead._id;
-            StorageService.set(StorageService.KEYS.LEADS, currentLeads);
-          }
-        }
-      })
-      .catch(err => {
-        console.warn('Background MongoDB save warning:', err.message);
-      });
 
     return newLead;
   },

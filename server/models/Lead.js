@@ -18,7 +18,7 @@ const activitySchema = new mongoose.Schema({
 
 const leadSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
-  company: { type: String, required: true, trim: true },
+  company: { type: String, default: '', trim: true },
   designation: { type: String, default: '' },
   linkedinUrl: { type: String, default: '' },
   companyWebsite: { type: String, default: '' },

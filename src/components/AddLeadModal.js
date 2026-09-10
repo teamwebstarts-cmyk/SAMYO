@@ -198,7 +198,7 @@ export const AddLeadModal = {
     // Form submission
     const form = document.getElementById('add-lead-form');
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const nameInput = document.getElementById('lead-name');
@@ -206,6 +206,12 @@ export const AddLeadModal = {
         if (!name) {
           Toast.show('Please enter the lead full name', 'error');
           return;
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Saving to MongoDB...';
         }
 
         const designation = document.getElementById('lead-designation')?.value.trim() || '';
@@ -233,23 +239,33 @@ export const AddLeadModal = {
         // Selected priority
         const selectedPriority = priorityGroup?.querySelector('.radio-pill.selected')?.getAttribute('data-value') || 'medium';
 
-        const createdLead = LeadsService.create({
-          name,
-          designation,
-          linkedinUrl,
-          company,
-          companyWebsite,
-          industry,
-          location,
-          requirements: selectedTags,
-          priority: selectedPriority,
-          potentialValue: potentialValue ? Number(potentialValue) : 0,
-          notes
-        });
+        try {
+          const createdLead = await LeadsService.create({
+            name,
+            designation,
+            linkedinUrl,
+            company,
+            companyWebsite,
+            industry,
+            location,
+            requirements: selectedTags,
+            priority: selectedPriority,
+            potentialValue: potentialValue ? Number(potentialValue) : 0,
+            notes
+          });
 
-        this.close();
-        Toast.show(`✓ Lead "${createdLead.name}" added to New Leads!`);
-        window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+          this.close();
+          form.reset();
+          Toast.show(`✓ Lead "${createdLead.name}" saved to MongoDB & Pipeline!`);
+          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+        } catch (err) {
+          Toast.show(`Failed to save lead: ${err.message}`, 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Lead to Pipeline';
+          }
+        }
       });
     }
   }

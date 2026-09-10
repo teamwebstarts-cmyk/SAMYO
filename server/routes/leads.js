@@ -131,8 +131,8 @@ router.post('/', async (req, res) => {
       notes
     } = req.body;
 
-    if (!name || !company) {
-      return res.status(400).json({ message: 'Name and company are required' });
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
     }
 
     const newLead = new Lead({
