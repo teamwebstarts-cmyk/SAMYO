@@ -26,64 +26,7 @@ export const DashboardPage = {
           </div>
         </div>
 
-        <!-- 4 KPI Cards -->
-        <div class="kpi-grid">
-          <!-- Total Leads -->
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span>Total Leads</span>
-              <div class="kpi-icon" style="background: #EEF2FF; color: #4F46E5;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-              </div>
-            </div>
-            <div class="kpi-value-row">
-              <div class="kpi-value">${stats.totalLeads}</div>
-             
-            </div>
-          </div>
-
-          <!-- Connections -->
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span>Connections</span>
-              <div class="kpi-icon" style="background: #E0F2FE; color: #0284C7;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-              </div>
-            </div>
-            <div class="kpi-value-row">
-              <div class="kpi-value">${stats.connections}</div>
-            
-            </div>
-          </div>
-
-          <!-- Proposals -->
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span>Proposals</span>
-              <div class="kpi-icon" style="background: #FEF3C7; color: #D97706;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-              </div>
-            </div>
-            <div class="kpi-value-row">
-              <div class="kpi-value">${stats.proposals}</div>
-             
-            </div>
-          </div>
-
-          <!-- Deals Won -->
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span>Deals Won</span>
-              <div class="kpi-icon" style="background: #DCFCE7; color: #15803D;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-              </div>
-            </div>
-            <div class="kpi-value-row">
-              <div class="kpi-value">${stats.won}</div>
-            
-            </div>
-          </div>
-        </div>
+       
 
         <!-- 65% / 35% Lower Section -->
         <div class="dashboard-split" style="display: grid; grid-template-columns: 65% calc(35% - 16px); gap: 16px; margin-bottom: var(--space-24);">
