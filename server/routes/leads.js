@@ -221,7 +221,7 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
       new: 'New Leads',
       request_sent: 'Request Sent',
       connected: 'Connected',
-      followup_schduled:'Follow-up Scheduled',
+      followup_scheduled: 'Follow-up Scheduled',
       qualified: 'Qualified',
       proposal: 'Proposal',
       won: 'Won',
