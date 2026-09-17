@@ -19,6 +19,7 @@ export const PipelinePage = {
       { id: 'new', name: 'New Leads', visible: true },
       { id: 'request_sent', name: 'Request Sent', visible: true },
       { id: 'connected', name: 'Connected', visible: true },
+      { id: 'followup_scheduled', name: 'Follow-up Scheduled', visible: true },
       { id: 'qualified', name: 'Qualified', visible: true },
       { id: 'proposal', name: 'Proposal', visible: true },
       { id: 'won', name: 'Won', visible: true }
@@ -338,7 +339,7 @@ export const PipelinePage = {
 
     const stages = this.getStages();
     // Default columns jinhe delete nahi kiya ja sakta
-    const DEFAULT_STAGE_IDS = ['new', 'request_sent', 'connected', 'qualified', 'proposal', 'won'];
+    const DEFAULT_STAGE_IDS = ['new', 'request_sent', 'connected', 'followup_scheduled', 'qualified', 'proposal', 'won'];
 
     // 1. Render Columns List with Drag Handle (⠿), Checkbox, and Conditional Delete
     container.innerHTML = stages.map((stage, index) => {

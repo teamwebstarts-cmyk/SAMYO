@@ -17,6 +17,7 @@ const DEFAULT_STAGES = [
   { id: 'new', name: 'New Leads', color: '#64748B' },
   { id: 'request_sent', name: 'Request Sent', color: '#F59E0B' },
   { id: 'connected', name: 'Connected', color: '#6366F1' },
+  {id:'followup_scheduled',name:'Follow-up Scheduled',color:'#0EA5E9'},
   { id: 'qualified', name: 'Qualified', color: '#8B5CF6' },
   { id: 'proposal', name: 'Proposal Sent', color: '#0284C7' },
   { id: 'won', name: 'Won', color: '#16A34A' }

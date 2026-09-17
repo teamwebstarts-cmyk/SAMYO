@@ -139,6 +139,7 @@ export const LeadsService = {
       new: 'New Leads',
       request_sent: 'Request Sent',
       connected: 'Connected',
+      followup_scheduled: 'Follow-up Scheduled',
       qualified: 'Qualified',
       proposal: 'Proposal',
       won: 'Won',
@@ -246,7 +247,7 @@ export const LeadsService = {
 
   recordGlobalActivity(text, type) {
     // Persist to MongoDB
-    ApiService.post('/activities', { text, type, time: 'Just now' }).catch(() => {});
+    ApiService.post('/activities', { text, type, time: 'Just now' }).catch(() => { });
 
     // Update local activities mirror
     const activities = StorageService.get(StorageService.KEYS.ACTIVITIES, []);

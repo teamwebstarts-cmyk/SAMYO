@@ -76,6 +76,7 @@ export const LeadDrawer = {
             <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New Leads</option>
             <option value="request_sent" ${lead.status === 'request_sent' ? 'selected' : ''}>Request Sent</option>
             <option value="connected" ${lead.status === 'connected' ? 'selected' : ''}>Connected</option>
+            <option value="followup_scheduled" ${lead.status === 'followup_scheduled' ? 'selected' : ''}>Follow-up Scheduled</option>
             <option value="qualified" ${lead.status === 'qualified' ? 'selected' : ''}>Qualified</option>
             <option value="proposal" ${lead.status === 'proposal' ? 'selected' : ''}>Proposal Sent</option>
             <option value="won" ${lead.status === 'won' ? 'selected' : ''}>Won (Closed)</option>
@@ -92,8 +93,8 @@ export const LeadDrawer = {
           <span class="drawer-field-label">Tech Requirement</span>
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
             ${requirements.length > 0
-              ? requirements.map(req => `<span class="tag-chip" style="font-size: 12px; padding: 4px 8px;">${req}</span>`).join('')
-              : '<span style="color: var(--text-muted); font-size: 13px; font-style: italic;">None specified</span>'}
+        ? requirements.map(req => `<span class="tag-chip" style="font-size: 12px; padding: 4px 8px;">${req}</span>`).join('')
+        : '<span style="color: var(--text-muted); font-size: 13px; font-style: italic;">None specified</span>'}
           </div>
         </div>
 
