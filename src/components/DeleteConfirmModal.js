@@ -1,4 +1,5 @@
 import { LeadsService } from '../services/leads.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
 import { LeadDrawer } from './LeadDrawer.js';
 
@@ -70,15 +71,25 @@ export const DeleteConfirmModal = {
     }
 
     if (confirmBtn) {
-      confirmBtn.addEventListener('click', () => {
+      confirmBtn.addEventListener('click', async () => {
+        if (!AuthService.isAdmin()) {
+          Toast.show('Action restricted: Only administrators can delete leads', 'warning');
+          this.close();
+          return;
+        }
         if (this.currentLeadId) {
           const lead = LeadsService.getById(this.currentLeadId);
           const name = lead ? lead.name : 'Lead';
-          LeadsService.delete(this.currentLeadId);
-          LeadDrawer.close();
-          this.close();
-          Toast.show(`Lead "${name}" permanently deleted`, 'danger');
-          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+          confirmBtn.disabled = true;
+          try {
+            await LeadsService.delete(this.currentLeadId);
+            LeadDrawer.close();
+            this.close();
+            Toast.show(`✓ Lead "${name}" deleted from MongoDB`, 'danger');
+            window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+          } finally {
+            confirmBtn.disabled = false;
+          }
         }
       });
     }

@@ -1,20 +1,58 @@
+
 /**
  * API Service for TechCRM
  * Communicates with the Node.js Express & MongoDB Atlas backend server
  */
-// Dynamic API URL: Automatically uses Render Cloud in production, localhost in development
 const PROD_API_URL = 'https://samyo-crm-api.onrender.com/api';
 const LOCAL_API_URL = 'http://localhost:5000/api';
 
 const isLocalhost = Boolean(
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.')
+  typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.')
+  )
 );
 
-const API_BASE_URL = isLocalhost ? LOCAL_API_URL : PROD_API_URL;
+// If on Vite dev server (port 3000), use Vite's proxy '/api'.
+// If running via Live Server (port 5500) or other local port, point directly to backend at port 5000.
+const getApiBaseUrl = () => {
+  if (typeof window === 'undefined') return LOCAL_API_URL;
+  if (!isLocalhost) return PROD_API_URL;
+  if (window.location.port === '3000') return '/api';
+  return `http://${window.location.hostname}:5000/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+async function handleResponse(response) {
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
+  if (!response.ok) {
+    const message = (data && (data.message || data.error)) || `HTTP ${response.status}: Server not reachable or endpoint not found`;
+    throw new Error(message);
+  }
+  return data;
+}
 
 export const ApiService = {
+  baseUrl: API_BASE_URL,
+
+  async checkHealth() {
+    try {
+      const res = await this.get('/health');
+      return { ok: true, data: res };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json'
@@ -32,10 +70,7 @@ export const ApiService = {
         method: 'GET',
         headers: this.getHeaders()
       });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return await response.json();
+      return await handleResponse(response);
     } catch (error) {
       console.warn(`ApiService.get(${endpoint}) failed:`, error.message);
       throw error;
@@ -49,11 +84,7 @@ export const ApiService = {
         headers: this.getHeaders(),
         body: JSON.stringify(data)
       });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      return result;
+      return await handleResponse(response);
     } catch (error) {
       console.warn(`ApiService.post(${endpoint}) failed:`, error.message);
       throw error;
@@ -67,11 +98,7 @@ export const ApiService = {
         headers: this.getHeaders(),
         body: JSON.stringify(data)
       });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      return result;
+      return await handleResponse(response);
     } catch (error) {
       console.warn(`ApiService.put(${endpoint}) failed:`, error.message);
       throw error;
@@ -85,11 +112,7 @@ export const ApiService = {
         headers: this.getHeaders(),
         body: JSON.stringify(data)
       });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      return result;
+      return await handleResponse(response);
     } catch (error) {
       console.warn(`ApiService.patch(${endpoint}) failed:`, error.message);
       throw error;
@@ -102,11 +125,7 @@ export const ApiService = {
         method: 'DELETE',
         headers: this.getHeaders()
       });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      return result;
+      return await handleResponse(response);
     } catch (error) {
       console.warn(`ApiService.delete(${endpoint}) failed:`, error.message);
       throw error;

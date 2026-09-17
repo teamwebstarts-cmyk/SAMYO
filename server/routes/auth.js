@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 
 const router = express.Router();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'neha.jain@techcrm.io').toLowerCase();
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -14,7 +15,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
@@ -23,33 +25,46 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Initial avatar initials
-    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
+    const initials = name.trim().split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
+
+    // Determine role: Only configured admin email receives Admin privileges; all others are Viewers
+    const isUserAdmin = cleanEmail === ADMIN_EMAIL;
+    const accessRole = isUserAdmin ? 'admin' : 'viewer';
 
     const user = new User({
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: cleanEmail,
       password: hashedPassword,
-      role: role || 'Web Developer / Outreach Specialist',
+      role: role || (isUserAdmin ? 'Outreach Lead / Admin' : 'Viewer (Read Only)'),
+      accessRole,
+      isAdmin: isUserAdmin,
       avatar: initials
     });
 
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      {
+        id: user._id,
+        email: user.email,
+        isAdmin: isUserAdmin,
+        accessRole
+      },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '7d' }
     );
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: isUserAdmin ? 'Admin registered successfully' : 'User registered successfully with Viewer access',
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        accessRole: user.accessRole,
+        isAdmin: user.isAdmin,
         avatar: user.avatar
       }
     });
@@ -68,17 +83,20 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    let user = await User.findOne({ email: cleanEmail });
 
-    // Seed default demo user if logging in as default Neha Jain on first run
-    if (!user && email.toLowerCase() === 'neha.jain@techcrm.io') {
+    // Seed default demo Admin user on first run if needed
+    if (!user && cleanEmail === ADMIN_EMAIL) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash('password', salt);
       user = new User({
         name: 'Neha Jain',
-        email: 'neha.jain@techcrm.io',
+        email: ADMIN_EMAIL,
         password: hashedPassword,
         role: 'Web Developer / Outreach Specialist',
+        accessRole: 'admin',
+        isAdmin: true,
         avatar: 'NJ'
       });
       await user.save();
@@ -93,8 +111,23 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Ensure admin flags are synchronized for the designated admin email
+    if (cleanEmail === ADMIN_EMAIL && (!user.isAdmin || user.accessRole !== 'admin')) {
+      user.isAdmin = true;
+      user.accessRole = 'admin';
+      await user.save();
+    }
+
+    const isUserAdmin = Boolean(user.isAdmin || user.accessRole === 'admin');
+    const accessRole = isUserAdmin ? 'admin' : (user.accessRole || 'viewer');
+
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      {
+        id: user._id,
+        email: user.email,
+        isAdmin: isUserAdmin,
+        accessRole
+      },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '7d' }
     );
@@ -107,6 +140,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        accessRole,
+        isAdmin: isUserAdmin,
         avatar: user.avatar
       }
     });
@@ -116,7 +151,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get Current User (via Token or fallback)
+// Get Current User (via Token)
 router.get('/me', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -132,7 +167,21 @@ router.get('/me', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ success: true, user });
+    const isUserAdmin = Boolean(user.isAdmin || user.email === ADMIN_EMAIL);
+    const accessRole = isUserAdmin ? 'admin' : (user.accessRole || 'viewer');
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accessRole,
+        isAdmin: isUserAdmin,
+        avatar: user.avatar
+      }
+    });
   } catch (error) {
     res.status(401).json({ message: 'Invalid or expired token', error: error.message });
   }

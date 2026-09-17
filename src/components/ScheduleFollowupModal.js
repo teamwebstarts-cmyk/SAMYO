@@ -1,5 +1,6 @@
 import { FollowUpsService } from '../services/followups.js';
 import { LeadsService } from '../services/leads.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
 
 export const ScheduleFollowupModal = {
@@ -91,32 +92,41 @@ export const ScheduleFollowupModal = {
     }
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!AuthService.isAdmin()) {
+          Toast.show('Action restricted: Only administrators can schedule tasks', 'warning');
+          this.close();
+          return;
+        }
         const select = document.getElementById('followup-lead');
-        const selectedOption = select.options[select.selectedIndex];
-        const leadId = select.value;
-        const leadName = selectedOption.getAttribute('data-name');
-        const company = selectedOption.getAttribute('data-company');
-        const linkedinUrl = selectedOption.getAttribute('data-linkedin');
-        const task = document.getElementById('followup-task').value;
-        const category = document.getElementById('followup-category').value;
-        const priority = document.getElementById('followup-priority').value;
+        const selectedOption = select?.options[select.selectedIndex];
+        const leadId = select?.value || '';
+        const leadName = selectedOption ? selectedOption.getAttribute('data-name') : 'Lead';
+        const company = selectedOption ? selectedOption.getAttribute('data-company') : '';
+        const linkedinUrl = selectedOption ? selectedOption.getAttribute('data-linkedin') : '';
+        const task = document.getElementById('followup-task')?.value || '';
+        const category = document.getElementById('followup-category')?.value || 'upcoming';
+        const priority = document.getElementById('followup-priority')?.value || 'upcoming';
 
-        FollowUpsService.create({
-          leadId,
-          leadName,
-          company,
-          task,
-          category,
-          priority,
-          dueLabel: category === 'today' ? 'Today, 4:00 PM' : 'Next Week',
-          linkedinUrl
-        });
+        try {
+          await FollowUpsService.create({
+            leadId,
+            leadName,
+            company,
+            task,
+            category,
+            priority,
+            dueLabel: category === 'today' ? 'Today, 4:00 PM' : 'Next Week',
+            linkedinUrl
+          });
 
-        Toast.show('✓ Follow-up scheduled successfully');
-        this.close();
-        window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+          Toast.show('✓ Follow-up saved to MongoDB & scheduled!');
+          this.close();
+          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+        } catch (err) {
+          Toast.show(`Failed to save follow-up: ${err.message}`, 'error');
+        }
       });
     }
   }

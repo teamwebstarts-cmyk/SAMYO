@@ -1,10 +1,12 @@
 import { StorageService } from '../services/storage.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from '../components/Toast.js';
 
 export const SettingsPage = {
   currentSection: 'pipeline', // pipeline, team, general
 
   render() {
+    const isAdmin = AuthService.isAdmin();
     const stages = StorageService.get(StorageService.KEYS.PIPELINE_STAGES, []);
 
     const teamMembers = [
@@ -21,6 +23,12 @@ export const SettingsPage = {
             <h1>Settings & Preferences</h1>
             <p>Configure pipeline stages, team members, outreach parameters and roles</p>
           </div>
+          ${!isAdmin ? `
+            <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; color: #92400E; display: flex; align-items: center; gap: 6px;">
+              <span>👁️</span>
+              <span><strong>Viewer Access:</strong> Configuration editing is restricted to Admin.</span>
+            </div>
+          ` : ''}
         </div>
 
         <!-- Navigation Tabs -->
@@ -62,10 +70,16 @@ export const SettingsPage = {
             </div>
 
             <!-- Add stage inline -->
+            ${isAdmin ? `
             <div style="display: flex; gap: 10px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
               <input type="text" id="new-stage-input" class="input" placeholder="e.g. Contract In Review" style="flex: 1;" />
               <button class="btn btn-secondary" id="btn-add-stage">+ Add Stage</button>
             </div>
+            ` : `
+            <div style="font-size: 13px; color: var(--text-muted); font-style: italic; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+              🔒 Modifying pipeline stages is restricted to Administrator.
+            </div>
+            `}
           </div>
         ` : ''}
 
@@ -77,7 +91,11 @@ export const SettingsPage = {
                 <h3 style="font-size: 16px; font-weight: 600;">Team Members & Outreach Seats</h3>
                 <p style="font-size: 13px; color: var(--text-secondary);">3 Active team members prospecting on LinkedIn</p>
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-invite-member">+ Invite Member</button>
+              ${isAdmin ? `
+                <button class="btn btn-primary btn-sm" id="btn-invite-member">+ Invite Member</button>
+              ` : `
+                <span class="badge" style="background: #F1F5F9; color: #64748B;">View Only</span>
+              `}
             </div>
 
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
@@ -134,9 +152,13 @@ export const SettingsPage = {
             <div class="form-group">
               <label class="form-label">Data Management</label>
               <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Reset all mock data back to default template demo state.</p>
-              <button id="btn-reset-demo-data" class="btn btn-secondary btn-sm" style="color: var(--danger);">
-                Restore Factory Demo Data
-              </button>
+              ${isAdmin ? `
+                <button id="btn-reset-demo-data" class="btn btn-secondary btn-sm" style="color: var(--danger);">
+                  Restore Factory Demo Data
+                </button>
+              ` : `
+                <span style="font-size: 13px; color: var(--text-muted); font-style: italic;">🔒 Data reset operations are restricted to Administrator.</span>
+              `}
             </div>
           </div>
         ` : ''}
@@ -152,6 +174,8 @@ export const SettingsPage = {
     if (tabPipe) tabPipe.addEventListener('click', () => { this.currentSection = 'pipeline'; this.reRender(); });
     if (tabTeam) tabTeam.addEventListener('click', () => { this.currentSection = 'team'; this.reRender(); });
     if (tabGen) tabGen.addEventListener('click', () => { this.currentSection = 'general'; this.reRender(); });
+
+    if (!AuthService.isAdmin()) return;
 
     // Add stage
     const addStageBtn = document.getElementById('btn-add-stage');

@@ -19,11 +19,20 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'Web Developer / Outreach Specialist'
+    default: 'Team Member'
+  },
+  accessRole: {
+    type: String,
+    enum: ['admin', 'viewer'],
+    default: 'viewer'
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   },
   avatar: {
     type: String,
-    default: 'NJ'
+    default: 'U'
   },
   createdAt: {
     type: Date,

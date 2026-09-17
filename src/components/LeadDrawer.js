@@ -1,4 +1,5 @@
 import { LeadsService } from '../services/leads.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
 
 export const LeadDrawer = {
@@ -29,6 +30,8 @@ export const LeadDrawer = {
     const lead = LeadsService.getById(leadId);
     if (!lead) return;
 
+    const isAdmin = AuthService.isAdmin();
+
     this.currentLeadId = leadId;
     const drawer = document.getElementById('lead-drawer');
     const backdrop = document.getElementById('drawer-backdrop');
@@ -40,6 +43,13 @@ export const LeadDrawer = {
     const requirements = Array.isArray(lead.requirements) ? lead.requirements : [];
 
     content.innerHTML = `
+      ${!isAdmin ? `
+      <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px; color: #92400E; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">👁️</span>
+        <span><strong>Viewer (Read-Only) Mode:</strong> Editing, notes, activity logs, and status updates are restricted to Administrator.</span>
+      </div>
+      ` : ''}
+
       <div class="drawer-profile-banner">
         <div class="drawer-avatar">${initials}</div>
         <div class="drawer-profile-text">
@@ -61,8 +71,8 @@ export const LeadDrawer = {
 
       <div class="drawer-field-grid">
         <div class="drawer-field">
-          <span class="drawer-field-label">Status</span>
-          <select id="drawer-status-select" class="select" style="font-weight: 500;">
+          <span class="drawer-field-label">Status ${!isAdmin ? '(Locked)' : ''}</span>
+          <select id="drawer-status-select" class="select" style="font-weight: 500; ${!isAdmin ? 'background: #F1F5F9; cursor: not-allowed; color: #64748B;' : ''}" ${!isAdmin ? 'disabled title="Read-only for viewers"' : ''}>
             <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New Leads</option>
             <option value="request_sent" ${lead.status === 'request_sent' ? 'selected' : ''}>Request Sent</option>
             <option value="connected" ${lead.status === 'connected' ? 'selected' : ''}>Connected</option>
@@ -111,10 +121,15 @@ export const LeadDrawer = {
           <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">
             Activity Timeline
           </span>
-          <button id="btn-add-activity-trigger" class="btn btn-ghost btn-sm" style="font-size: 11px;">+ Add Activity</button>
+          ${isAdmin ? `
+            <button id="btn-add-activity-trigger" class="btn btn-ghost btn-sm" style="font-size: 11px;">+ Add Activity</button>
+          ` : `
+            <span class="badge" style="background: #F1F5F9; color: #64748B; font-size: 10.5px;">Read-Only</span>
+          `}
         </div>
 
         <!-- Inline Add Activity Form -->
+        ${isAdmin ? `
         <div id="add-activity-box" style="display: none; margin-bottom: 12px; background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
           <input type="text" id="custom-activity-input" class="input" placeholder="e.g. Discussed proposal on call" style="margin-bottom: 8px;" />
           <div style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -122,6 +137,7 @@ export const LeadDrawer = {
             <button id="btn-save-activity" class="btn btn-primary btn-sm">Log Activity</button>
           </div>
         </div>
+        ` : ''}
 
         <div class="timeline">
           ${(lead.activities || []).map(act => `
@@ -156,21 +172,31 @@ export const LeadDrawer = {
         </div>
 
         <!-- Add Note Box -->
+        ${isAdmin ? `
         <div style="margin-top: 10px;">
           <textarea id="drawer-new-note" class="textarea" placeholder="Add a note or call update..." style="min-height: 60px;"></textarea>
           <button id="btn-drawer-add-note" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: 100%;">+ Add Note</button>
         </div>
+        ` : `
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 10px; padding: 8px; background: #F8FAFC; border-radius: 6px; text-align: center;">
+          🔒 Adding notes is restricted to Administrator
+        </div>
+        `}
       </div>
 
       <div class="drawer-divider"></div>
 
       <!-- Bottom Actions -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+        ${isAdmin ? `
         <button id="btn-drawer-delete-lead" class="btn btn-ghost btn-sm" style="color: var(--danger);">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           Delete Lead
         </button>
-        <a href="#/followups" class="btn btn-secondary btn-sm">Schedule Follow-up</a>
+        <button id="btn-drawer-schedule-followup" class="btn btn-secondary btn-sm">Schedule Follow-up</button>
+        ` : `
+        <span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Viewing as Guest/Viewer</span>
+        `}
       </div>
     `;
 
@@ -191,13 +217,15 @@ export const LeadDrawer = {
   },
 
   bindDrawerActions(leadId) {
+    if (!AuthService.isAdmin()) return;
+
     // Status Change
     const statusSelect = document.getElementById('drawer-status-select');
     if (statusSelect) {
-      statusSelect.addEventListener('change', (e) => {
+      statusSelect.addEventListener('change', async (e) => {
         const newStatus = e.target.value;
-        LeadsService.updateStatus(leadId, newStatus);
-        Toast.show(`Lead status updated to ${newStatus.replace('_', ' ')}`);
+        await LeadsService.updateStatus(leadId, newStatus);
+        Toast.show(`✓ Status updated to ${newStatus.replace('_', ' ')} in MongoDB`);
         // Refresh drawer and page
         window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
         this.open(leadId);
@@ -224,10 +252,10 @@ export const LeadDrawer = {
       });
     }
     if (saveAct && actInput) {
-      saveAct.addEventListener('click', () => {
+      saveAct.addEventListener('click', async () => {
         const text = actInput.value.trim();
         if (text) {
-          LeadsService.addActivity(leadId, text);
+          await LeadsService.addActivity(leadId, text);
           Toast.show('Activity logged successfully');
           window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
           this.open(leadId);
@@ -239,14 +267,27 @@ export const LeadDrawer = {
     const addNoteBtn = document.getElementById('btn-drawer-add-note');
     const noteInput = document.getElementById('drawer-new-note');
     if (addNoteBtn && noteInput) {
-      addNoteBtn.addEventListener('click', () => {
+      addNoteBtn.addEventListener('click', async () => {
         const text = noteInput.value.trim();
         if (text) {
-          LeadsService.addNote(leadId, text);
-          Toast.show('Note added');
-          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
-          this.open(leadId);
+          addNoteBtn.disabled = true;
+          try {
+            await LeadsService.addNote(leadId, text);
+            Toast.show('✓ Note saved to MongoDB');
+            window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+            this.open(leadId);
+          } finally {
+            addNoteBtn.disabled = false;
+          }
         }
+      });
+    }
+
+    // Schedule Follow-up button in drawer
+    const scheduleBtn = document.getElementById('btn-drawer-schedule-followup');
+    if (scheduleBtn) {
+      scheduleBtn.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('techcrm:open-schedule-followup'));
       });
     }
 

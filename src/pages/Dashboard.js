@@ -1,28 +1,37 @@
 import { LeadsService } from '../services/leads.js';
 import { StorageService } from '../services/storage.js';
+import { AuthService } from '../services/auth.js';
 
 export const DashboardPage = {
   render() {
     const stats = LeadsService.getStats();
     const activities = StorageService.get(StorageService.KEYS.ACTIVITIES, []);
+    const user = AuthService.getCurrentUser();
+    const isAdmin = AuthService.isAdmin();
 
     return `
       <div class="page-container">
         <!-- Page Header -->
         <div class="page-header">
           <div class="page-title-group">
-            <h1>Good morning, Neha 👋</h1>
+            <h1>Good morning, ${user?.name ? user.name.split(' ')[0] : 'User'} 👋</h1>
             <p>Here's your LinkedIn outreach progress and team performance overview.</p>
           </div>
-          <div style="display: flex; gap: 10px;">
-           <button class="btn btn-secondary" onclick="window.location.hash='#/pipeline'">
-  View Leaderboard →
-</button>
-
-            <button class="btn btn-primary" id="btn-dash-add-lead">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-               Add Lead
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-secondary" onclick="window.location.hash='#/pipeline'">
+              View Lead Board →
             </button>
+
+            ${isAdmin ? `
+              <button class="btn btn-primary" id="btn-dash-add-lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Lead
+              </button>
+            ` : `
+              <span style="font-size: 12px; color: #854D0E; background: #FEF9C3; border: 1px solid #FEF08A; padding: 6px 12px; border-radius: 8px; font-weight: 600;">
+                👁️ Read-Only Mode
+              </span>
+            `}
           </div>
         </div>
 
@@ -103,7 +112,7 @@ export const DashboardPage = {
           <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <h3 class="section-heading" style="font-size: 16px;">Leaderboard Breakdown</h3>
+                <h3 class="section-heading" style="font-size: 16px;">Lead Board Breakdown</h3>
                 <a href="#/pipeline" style="font-size: 12px; color: var(--primary); font-weight: 600;">Open Board →</a>
               </div>
 

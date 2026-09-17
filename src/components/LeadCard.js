@@ -1,3 +1,5 @@
+import { AuthService } from '../services/auth.js';
+
 export const LeadCard = {
   getTechIcon(tech) {
     switch (tech.toLowerCase()) {
@@ -29,6 +31,7 @@ export const LeadCard = {
     const initials = (lead.name || 'L').split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L';
     const requirements = Array.isArray(lead.requirements) ? lead.requirements : [];
     const timeAgo = this.formatTimeAgo(lead.addedDate);
+    const isAdmin = AuthService.isAdmin();
 
     let priorityBadge = '';
     if (lead.priority === 'high') {
@@ -40,7 +43,7 @@ export const LeadCard = {
     }
 
     return `
-      <div class="lead-card" draggable="true" data-id="${lead.id}" data-status="${lead.status}">
+      <div class="lead-card" draggable="${isAdmin ? 'true' : 'false'}" data-id="${lead.id}" data-status="${lead.status}" style="${isAdmin ? '' : 'cursor: pointer;'}">
         <div class="lead-card-header">
           <div class="lead-card-avatar">${initials}</div>
           <div class="lead-card-name" title="${lead.name}">${lead.name}</div>

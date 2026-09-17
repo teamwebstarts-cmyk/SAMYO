@@ -1,5 +1,6 @@
 import { LeadsService } from '../services/leads.js';
 import { StorageService } from '../services/storage.js';
+import { AuthService } from '../services/auth.js';
 import { KanbanColumn } from '../components/KanbanColumn.js';
 import { LeadDrawer } from '../components/LeadDrawer.js';
 import { LostReasonModal } from '../components/LostReasonModal.js';
@@ -47,6 +48,7 @@ export const PipelinePage = {
   render() {
     const allLeads = LeadsService.getAll();
     const stages = this.getStages();
+    const isAdmin = AuthService.isAdmin();
     // Filter only columns that are checked/visible (default true)
     const visibleStages = stages.filter(s => s.visible !== false);
 
@@ -75,47 +77,63 @@ export const PipelinePage = {
         <!-- Page Header & Actions -->
         <div class="page-header">
           <div class="page-title-group">
-            <h1>Leaderboard</h1>
+            <h1>Lead Board</h1>
             <p>Discovery → Connection → Conversation → Proposal → Won</p>
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center;">
-            <!-- Customize Columns Dropdown -->
-            <div style="position: relative;">
-              <button class="btn btn-secondary" id="btn-toggle-column-menu" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/>
-                </svg>
-                Columns ▾
-              </button>
+            ${isAdmin ? `
+              <!-- Customize Columns Dropdown -->
+              <div style="position: relative;">
+                <button class="btn btn-secondary" id="btn-toggle-column-menu" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/>
+                  </svg>
+                  Columns ▾
+                </button>
 
-              <div id="column-customize-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 330px; z-index: 100; background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.14); padding: 16px;">
-                <div style="font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 2px;">Customize Columns</div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Toggle visibility, reorder (↑/↓) or delete any column</div>
+                <div id="column-customize-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 330px; z-index: 100; background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.14); padding: 16px;">
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 2px;">Customize Columns</div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Toggle visibility, reorder (↑/↓) or delete any column</div>
 
-                <!-- Column Checkboxes & Reorder List -->
-                <div id="column-checkboxes-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
-                  <!-- Dynamically rendered items -->
+                  <!-- Column Checkboxes & Reorder List -->
+                  <div id="column-checkboxes-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Dynamically rendered items -->
+                  </div>
+
+                  <div style="border-top: 1px solid var(--border-subtle); margin: 14px 0 12px;"></div>
+
+                  <!-- Add New Column Form -->
+                  <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Add New Column</div>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-new-column-name" class="input" placeholder="Column name (e.g. In Review)..." style="font-size: 12px; padding: 6px 10px; height: 32px; flex: 1;" />
+                    <button id="btn-submit-new-column" class="btn btn-primary" style="font-size: 12px; padding: 0 14px; height: 32px; white-space: nowrap;">+ Add</button>
+                  </div>
                 </div>
-
-                <div style="border-top: 1px solid var(--border-subtle); margin: 14px 0 12px;"></div>
-
-                                <!-- Add New Column Form -->
-                <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Add New Column</div>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="input-new-column-name" class="input" placeholder="Column name (e.g. In Review)..." style="font-size: 12px; padding: 6px 10px; height: 32px; flex: 1;" />
-                  <button id="btn-submit-new-column" class="btn btn-primary" style="font-size: 12px; padding: 0 14px; height: 32px; white-space: nowrap;">+ Add</button>
-                </div>
-
               </div>
-            </div>
 
-            <button class="btn btn-primary" id="btn-pipeline-add-lead">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-               Add Lead
-            </button>
+              <button class="btn btn-primary" id="btn-pipeline-add-lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Lead
+              </button>
+            ` : `
+              <span style="font-size: 12px; color: #854D0E; background: #FEF9C3; border: 1px solid #FEF08A; padding: 6px 12px; border-radius: 8px; font-weight: 600;">
+                👁️ View Only
+              </span>
+            `}
           </div>
         </div>
+
+        ${!isAdmin ? `
+          <!-- Read-Only Banner for Viewers -->
+          <div style="background: #FEF9C3; border: 1px solid #FEF08A; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #854D0E;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 18px;">👁️</span>
+              <span><strong>Viewer (Read-Only) Mode:</strong> You can view all live leads, stages, and metrics. Modifying leads, drag-and-drop, and column editing are restricted to Admin.</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; background: #FEF08A; color: #713F12; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Read Only</span>
+          </div>
+        ` : ''}
 
         <!-- Filter & Search Controls Bar -->
         <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: var(--space-20); flex-wrap: wrap;">
@@ -475,8 +493,9 @@ export const PipelinePage = {
   bindKanbanInteractions() {
     const container = document.getElementById('app');
     if (!container) return;
+    const isAdmin = AuthService.isAdmin();
 
-    // Card Click -> Open Drawer
+    // Card Click -> Open Drawer (always available)
     container.querySelectorAll('.lead-card').forEach(card => {
       card.addEventListener('click', () => {
         if (card.classList.contains('is-dragging')) return;
@@ -484,59 +503,71 @@ export const PipelinePage = {
         if (leadId) LeadDrawer.open(leadId);
       });
 
-      // Drag Start
-      card.addEventListener('dragstart', (e) => {
-        this.draggedLeadId = card.getAttribute('data-id');
-        card.classList.add('is-dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', this.draggedLeadId);
-      });
+      // Drag Start only if Admin
+      if (isAdmin) {
+        card.addEventListener('dragstart', (e) => {
+          this.draggedLeadId = card.getAttribute('data-id');
+          card.classList.add('is-dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', this.draggedLeadId);
+        });
 
-      // Drag End
-      card.addEventListener('dragend', () => {
-        card.classList.remove('is-dragging');
-        this.draggedLeadId = null;
-        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-      });
+        // Drag End
+        card.addEventListener('dragend', () => {
+          card.classList.remove('is-dragging');
+          this.draggedLeadId = null;
+          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+      } else {
+        // Prevent accidental drag for viewers
+        card.addEventListener('dragstart', (e) => e.preventDefault());
+      }
     });
 
-    // Drop Targets (Columns & Outcome Zones)
-    const dropZones = container.querySelectorAll('.kanban-column, .outcome-drop-zone');
-    dropZones.forEach(zone => {
-      zone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        zone.classList.add('drag-over');
-      });
+    // Drop Targets (only active if Admin)
+    if (isAdmin) {
+      const dropZones = container.querySelectorAll('.kanban-column, .outcome-drop-zone');
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          zone.classList.add('drag-over');
+        });
 
-      zone.addEventListener('dragleave', (e) => {
-        if (!zone.contains(e.relatedTarget)) {
+        zone.addEventListener('dragleave', (e) => {
+          if (!zone.contains(e.relatedTarget)) {
+            zone.classList.remove('drag-over');
+          }
+        });
+
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
           zone.classList.remove('drag-over');
-        }
+
+          const leadId = e.dataTransfer.getData('text/plain') || this.draggedLeadId;
+          const newStage = zone.getAttribute('data-stage');
+
+          if (leadId && newStage) {
+            this.handleLeadDrop(leadId, newStage);
+          }
+        });
       });
-
-      zone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        zone.classList.remove('drag-over');
-
-        const leadId = e.dataTransfer.getData('text/plain') || this.draggedLeadId;
-        const newStage = zone.getAttribute('data-stage');
-
-        if (leadId && newStage) {
-          this.handleLeadDrop(leadId, newStage);
-        }
-      });
-    });
+    }
   },
 
-  handleLeadDrop(leadId, newStage) {
+  async handleLeadDrop(leadId, newStage) {
+    if (!AuthService.isAdmin()) {
+      Toast.show('Access Denied: Only Admin can move leads to another stage', 'error');
+      return;
+    }
+
     const lead = LeadsService.getById(leadId);
     if (!lead || lead.status === newStage) return;
 
     if (newStage === 'lost') {
       LostReasonModal.open(leadId);
     } else {
-      LeadsService.updateStatus(leadId, newStage);
+      await LeadsService.updateStatus(leadId, newStage);
       const stageName = newStage.replace('_', ' ');
       Toast.show(`✓ Lead "${lead.name}" moved to ${stageName.toUpperCase()}`);
       window.dispatchEvent(new CustomEvent('techcrm:data-changed'));

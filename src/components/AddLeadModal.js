@@ -1,4 +1,5 @@
 import { LeadsService } from '../services/leads.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
 
 export const AddLeadModal = {
@@ -200,6 +201,12 @@ export const AddLeadModal = {
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!AuthService.isAdmin()) {
+          Toast.show('Action restricted: Only administrators can create leads', 'warning');
+          this.close();
+          return;
+        }
 
         const nameInput = document.getElementById('lead-name');
         const name = nameInput ? nameInput.value.trim() : '';

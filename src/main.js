@@ -1,6 +1,7 @@
 import { AuthService } from './services/auth.js';
 import { StorageService } from './services/storage.js';
 import { LeadsService } from './services/leads.js';
+import { FollowUpsService } from './services/followups.js';
 import { Header } from './components/Header.js';
 import { Sidebar } from './components/Sidebar.js';
 import { MobileNav } from './components/MobileNav.js';
@@ -9,14 +10,13 @@ import { AddLeadModal } from './components/AddLeadModal.js';
 import { LostReasonModal } from './components/LostReasonModal.js';
 import { ScheduleFollowupModal } from './components/ScheduleFollowupModal.js';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal.js';
+import { Toast } from './components/Toast.js';
 
-// Pages
 // Pages
 import { LoginPage } from './pages/Login.js';
 import { DashboardPage } from './pages/Dashboard.js';
 import { PipelinePage } from './pages/Pipeline.js';
 import { SettingsPage } from './pages/Settings.js';
-
 
 class App {
   constructor() {
@@ -42,11 +42,14 @@ class App {
       document.body.classList.add('sidebar-collapsed');
     }
 
-    // Sync fresh leads from MongoDB Atlas cloud database
-    LeadsService.syncWithServer().then(() => {
-      if (this.currentRoute === '/dashboard' || this.currentRoute === '/pipeline') {
-        this.renderCurrentView();
-      }
+    // Sync fresh leads and followups from MongoDB Atlas cloud database
+    Promise.all([
+      LeadsService.fetchFromMongoDB(),
+      FollowUpsService.fetchFromMongoDB()
+    ]).then(() => {
+      this.renderCurrentView();
+      // Notify components that MongoDB data is ready
+      window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
     });
 
     // Mount permanent modal & drawer containers
@@ -87,14 +90,26 @@ class App {
 
   registerGlobalEvents() {
     window.addEventListener('techcrm:open-add-lead', () => {
+      if (!AuthService.isAdmin()) {
+        Toast.show('Action restricted: Only administrators can create leads', 'warning');
+        return;
+      }
       AddLeadModal.open();
     });
 
     window.addEventListener('techcrm:open-schedule-followup', () => {
+      if (!AuthService.isAdmin()) {
+        Toast.show('Action restricted: Only administrators can schedule tasks', 'warning');
+        return;
+      }
       ScheduleFollowupModal.open();
     });
 
     window.addEventListener('techcrm:confirm-delete', (e) => {
+      if (!AuthService.isAdmin()) {
+        Toast.show('Action restricted: Only administrators can delete records', 'warning');
+        return;
+      }
       if (e.detail?.leadId) {
         DeleteConfirmModal.open(e.detail.leadId);
       }

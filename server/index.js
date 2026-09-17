@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import leadRoutes from './routes/leads.js';
+import followupRoutes from './routes/followups.js';
+import activityRoutes from './routes/activities.js';
 
 // Load environment variables from .env
 dotenv.config();
@@ -19,13 +21,31 @@ app.use(express.json());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api/followups', followupRoutes);
+app.use('/api/activities', activityRoutes);
 
 // Health check route
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
+  let counts = { leads: 0, followups: 0, activities: 0 };
+  if (isConnected) {
+    try {
+      const [leads, followups, activities] = await Promise.all([
+        mongoose.connection.db.collection('leads').countDocuments(),
+        mongoose.connection.db.collection('followups').countDocuments(),
+        mongoose.connection.db.collection('activities').countDocuments()
+      ]);
+      counts = { leads, followups, activities };
+    } catch (e) {
+      // ignore
+    }
+  }
+
   res.json({
     status: 'online',
     message: 'TechCRM Backend Server is running smoothly 🚀',
-    database: mongoose.connection.readyState === 1 ? 'Connected to MongoDB Atlas' : 'Connecting...'
+    database: isConnected ? 'Connected to MongoDB Atlas' : 'Connecting...',
+    counts
   });
 });
 

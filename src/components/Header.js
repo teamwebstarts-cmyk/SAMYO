@@ -1,10 +1,12 @@
 import { AuthService } from '../services/auth.js';
 import { StorageService } from '../services/storage.js';
+import { ApiService } from '../services/api.js';
 import { NotificationPanel } from './NotificationPanel.js';
 
 export const Header = {
   render() {
-    const user = AuthService.getCurrentUser();
+    const user = AuthService.getCurrentUser() || { name: 'User', role: 'Viewer', avatar: 'U', email: '' };
+    const isAdmin = AuthService.isAdmin();
     const notifications = StorageService.get(StorageService.KEYS.NOTIFICATIONS, []);
     const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -19,11 +21,23 @@ export const Header = {
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="global-search-input" class="input" placeholder="Search Leaderboard..." />
+            <input type="text" id="global-search-input" class="input" placeholder="Search Lead Board..." />
           </div>
         </div>
 
         <div class="header-right">
+          <!-- Role Badge (Admin vs Viewer) -->
+          <div class="user-role-pill" style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; ${isAdmin ? 'background: #EEF2FF; border: 1px solid #C7D2FE; color: #4338CA;' : 'background: #FEF9C3; border: 1px solid #FEF08A; color: #854D0E;'}" title="${isAdmin ? 'You have Full Administrator Privileges' : 'You are viewing in Read-Only mode'}">
+            <span>${isAdmin ? '👑' : '👁️'}</span>
+            <span>${isAdmin ? 'Admin' : 'Viewer (Read Only)'}</span>
+          </div>
+
+          <!-- MongoDB Atlas Live Connection Status -->
+          <div id="mongo-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; font-size: 11.5px; font-weight: 600; color: #15803D; cursor: default;" title="Connected to MongoDB Atlas Database">
+            <span id="mongo-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E; display: inline-block;"></span>
+            <span id="mongo-status-text">MongoDB Atlas</span>
+          </div>
+
           <!-- Notification Bell -->
           <div style="position: relative;">
             <button id="notif-toggle-btn" class="header-icon-btn" title="Notifications" aria-label="Notifications">
@@ -52,7 +66,8 @@ export const Header = {
             <div id="user-dropdown-menu" class="dropdown-menu">
               <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 4px;">
                 <div style="font-size: 13px; font-weight: 600; color: var(--text-main);">${user.name}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${user.email}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">${user.email || ''}</div>
+                <div style="margin-top: 4px; font-size: 11px; font-weight: 600; color: ${isAdmin ? '#4F46E5' : '#854D0E'};">${isAdmin ? '👑 Administrator (Full Access)' : '👁️ Viewer (Read Only)'}</div>
               </div>
               <a href="#/settings" class="dropdown-item">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -113,6 +128,35 @@ export const Header = {
         AuthService.logout();
       });
     }
+
+    // Check MongoDB Live Status
+    const updateMongoStatus = async () => {
+      const badge = document.getElementById('mongo-connection-badge');
+      const dot = document.getElementById('mongo-status-dot');
+      const text = document.getElementById('mongo-status-text');
+      if (!badge || !dot || !text) return;
+
+      const health = await ApiService.checkHealth();
+      if (health.ok && health.data?.database?.includes('Connected')) {
+        badge.style.background = '#F0FDF4';
+        badge.style.borderColor = '#BBF7D0';
+        badge.style.color = '#15803D';
+        dot.style.background = '#22C55E';
+        dot.style.boxShadow = '0 0 6px #22C55E';
+        text.textContent = 'MongoDB Atlas';
+        badge.title = `Connected to MongoDB Atlas Cloud Database (${health.data?.counts?.leads ?? 0} leads stored)`;
+      } else {
+        badge.style.background = '#FEF2F2';
+        badge.style.borderColor = '#FECACA';
+        badge.style.color = '#B91C1C';
+        dot.style.background = '#EF4444';
+        dot.style.boxShadow = 'none';
+        text.textContent = 'MongoDB Offline';
+        badge.title = 'Cannot reach MongoDB Atlas backend server';
+      }
+    };
+    updateMongoStatus();
+    window.addEventListener('techcrm:data-changed', updateMongoStatus);
 
     // Global search handler
     const searchInput = document.getElementById('global-search-input');

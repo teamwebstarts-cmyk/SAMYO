@@ -1,5 +1,7 @@
 import express from 'express';
 import { Lead } from '../models/Lead.js';
+import { Activity } from '../models/Activity.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -113,8 +115,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/leads - Create new lead
-router.post('/', async (req, res) => {
+// POST /api/leads - Create new lead (Admin only)
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const {
       name,
@@ -158,6 +160,13 @@ router.post('/', async (req, res) => {
     });
 
     const savedLead = await newLead.save();
+
+    // Persist global activity in MongoDB
+    Activity.create({
+      text: `${savedLead.name}${savedLead.company && savedLead.company !== 'Individual' ? ` (${savedLead.company})` : ''} added as New Lead`,
+      type: 'new'
+    }).catch(err => console.warn('Activity log error:', err.message));
+
     res.status(201).json(savedLead);
   } catch (error) {
     console.error('Error creating lead:', error);
@@ -165,8 +174,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/leads/:id - Update lead
-router.put('/:id', async (req, res) => {
+// PUT /api/leads/:id - Update lead (Admin only)
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
@@ -184,8 +193,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/leads/:id/status - Update stage/status
-router.patch('/:id/status', async (req, res) => {
+// PATCH /api/leads/:id/status - Update stage/status (Admin only)
+router.patch('/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status, lostReason } = req.body;
     const update = { status };
@@ -206,14 +215,30 @@ router.patch('/:id/status', async (req, res) => {
     });
 
     await lead.save();
+
+    // Persist global activity in MongoDB
+    const statusLabels = {
+      new: 'New Leads',
+      request_sent: 'Request Sent',
+      connected: 'Connected',
+      qualified: 'Qualified',
+      proposal: 'Proposal',
+      won: 'Won',
+      lost: 'Lost'
+    };
+    Activity.create({
+      text: `${lead.name} moved to ${statusLabels[status] || status}`,
+      type: status
+    }).catch(err => console.warn('Activity log error:', err.message));
+
     res.json(lead);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update status', error: error.message });
   }
 });
 
-// POST /api/leads/:id/notes - Add note to lead
-router.post('/:id/notes', async (req, res) => {
+// POST /api/leads/:id/notes - Add note to lead (Admin only)
+router.post('/:id/notes', requireAdmin, async (req, res) => {
   try {
     const { text, author } = req.body;
     if (!text) {
@@ -244,8 +269,8 @@ router.post('/:id/notes', async (req, res) => {
   }
 });
 
-// DELETE /api/leads/:id - Delete lead
-router.delete('/:id', async (req, res) => {
+// DELETE /api/leads/:id - Delete lead (Admin only)
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const deletedLead = await Lead.findByIdAndDelete(req.params.id);
     if (!deletedLead) {

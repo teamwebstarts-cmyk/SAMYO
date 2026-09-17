@@ -296,12 +296,16 @@ const INITIAL_NOTIFICATIONS = [
 
 export const StorageService = {
   init() {
-    if (!localStorage.getItem(STORAGE_KEYS.LEADS)) {
-      localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(INITIAL_LEADS));
+    // Clean up stale mock seeds so real MongoDB Atlas data displays
+    const cachedLeads = this.get(STORAGE_KEYS.LEADS);
+    if (Array.isArray(cachedLeads) && cachedLeads.length > 0 && cachedLeads[0].id === 'lead-1') {
+      localStorage.removeItem(STORAGE_KEYS.LEADS);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.FOLLOWUPS)) {
-      localStorage.setItem(STORAGE_KEYS.FOLLOWUPS, JSON.stringify(INITIAL_FOLLOWUPS));
+    const cachedFollowups = this.get(STORAGE_KEYS.FOLLOWUPS);
+    if (Array.isArray(cachedFollowups) && cachedFollowups.length > 0 && cachedFollowups[0].id === 'f-1') {
+      localStorage.removeItem(STORAGE_KEYS.FOLLOWUPS);
     }
+
     if (!localStorage.getItem(STORAGE_KEYS.ACTIVITIES)) {
       localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(INITIAL_ACTIVITIES));
     }

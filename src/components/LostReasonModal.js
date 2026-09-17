@@ -1,4 +1,5 @@
 import { LeadsService } from '../services/leads.js';
+import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
 
 export const LostReasonModal = {
@@ -105,8 +106,13 @@ export const LostReasonModal = {
         }
       });
 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!AuthService.isAdmin()) {
+          Toast.show('Action restricted: Only administrators can update lead status', 'warning');
+          this.close();
+          return;
+        }
         if (!this.currentLeadId) return;
 
         const selectedRadio = form.querySelector('input[name="lost-reason"]:checked');
@@ -116,8 +122,8 @@ export const LostReasonModal = {
           if (custom) reason = custom;
         }
 
-        LeadsService.updateStatus(this.currentLeadId, 'lost', { lostReason: reason });
-        Toast.show(`Lead marked as Lost (${reason})`, 'warning');
+        await LeadsService.updateStatus(this.currentLeadId, 'lost', { lostReason: reason });
+        Toast.show(`✓ Lead marked as Lost (${reason}) in MongoDB`, 'warning');
         this.close();
         window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
       });
