@@ -1,13 +1,14 @@
 import express from 'express';
 import { Activity } from '../models/Activity.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/activities - Get recent activities
-router.get('/', async (req, res) => {
+// GET /api/activities - Get recent activities for authenticated user
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
-    const activities = await Activity.find().sort({ createdAt: -1 }).limit(limit);
+    const activities = await Activity.find({ ownerId: req.user.id }).sort({ createdAt: -1 }).limit(limit);
     res.json(activities);
   } catch (error) {
     console.error('Error fetching activities:', error);
@@ -15,8 +16,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/activities - Log new activity
-router.post('/', async (req, res) => {
+// POST /api/activities - Log new activity for authenticated user
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { text, type, time } = req.body;
     if (!text) {
@@ -24,6 +25,7 @@ router.post('/', async (req, res) => {
     }
 
     const activity = new Activity({
+      ownerId: req.user.id,
       text,
       type: type || 'new',
       time: time || 'Just now',
@@ -39,3 +41,4 @@ router.post('/', async (req, res) => {
 });
 
 export default router;
+

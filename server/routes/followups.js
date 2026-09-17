@@ -1,13 +1,13 @@
 import express from 'express';
 import { Followup } from '../models/Followup.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/followups - Fetch all followups
-router.get('/', async (req, res) => {
+// GET /api/followups - Fetch authenticated user's followups
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const followups = await Followup.find().sort({ dueDate: 1 });
+    const followups = await Followup.find({ ownerId: req.user.id }).sort({ dueDate: 1 });
     res.json(followups);
   } catch (error) {
     console.error('Error fetching followups:', error);
@@ -15,8 +15,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/followups - Create new followup (Admin only)
-router.post('/', requireAdmin, async (req, res) => {
+// POST /api/followups - Create new followup for authenticated user
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const {
       leadId,
@@ -35,6 +35,7 @@ router.post('/', requireAdmin, async (req, res) => {
     }
 
     const newFollowup = new Followup({
+      ownerId: req.user.id,
       leadId: leadId || '',
       leadName,
       company: company || '',
@@ -55,10 +56,10 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/followups/:id/complete - Mark followup as completed (Admin only)
-router.patch('/:id/complete', requireAdmin, async (req, res) => {
+// PATCH /api/followups/:id/complete - Mark followup as completed
+router.patch('/:id/complete', authenticateToken, async (req, res) => {
   try {
-    const followup = await Followup.findById(req.params.id);
+    const followup = await Followup.findOne({ _id: req.params.id, ownerId: req.user.id });
     if (!followup) {
       return res.status(404).json({ message: 'Followup not found' });
     }
@@ -72,11 +73,11 @@ router.patch('/:id/complete', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/followups/:id/snooze - Snooze followup (Admin only)
-router.patch('/:id/snooze', requireAdmin, async (req, res) => {
+// PATCH /api/followups/:id/snooze - Snooze followup
+router.patch('/:id/snooze', authenticateToken, async (req, res) => {
   try {
     const { days = 1 } = req.body;
-    const followup = await Followup.findById(req.params.id);
+    const followup = await Followup.findOne({ _id: req.params.id, ownerId: req.user.id });
     if (!followup) {
       return res.status(404).json({ message: 'Followup not found' });
     }
@@ -98,12 +99,13 @@ router.patch('/:id/snooze', requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/followups/:id - Update followup (Admin only)
-router.put('/:id', requireAdmin, async (req, res) => {
+// PUT /api/followups/:id - Update followup
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const updated = await Followup.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
+    const { ownerId, _id, id, ...safeUpdates } = req.body;
+    const updated = await Followup.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user.id },
+      { $set: safeUpdates },
       { new: true, runValidators: true }
     );
 
@@ -118,10 +120,10 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// DELETE /api/followups/:id - Delete followup (Admin only)
-router.delete('/:id', requireAdmin, async (req, res) => {
+// DELETE /api/followups/:id - Delete followup
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const deleted = await Followup.findByIdAndDelete(req.params.id);
+    const deleted = await Followup.findOneAndDelete({ _id: req.params.id, ownerId: req.user.id });
     if (!deleted) {
       return res.status(404).json({ message: 'Followup not found' });
     }
@@ -134,3 +136,4 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 export default router;
+

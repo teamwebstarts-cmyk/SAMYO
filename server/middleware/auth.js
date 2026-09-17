@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 /**
- * Middleware to verify JWT token if provided
+ * Middleware to verify JWT token
  */
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -10,39 +10,33 @@ export const authenticateToken = (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required: Malformed token header' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    console.error('FATAL: JWT_SECRET environment variable is not configured');
+    return res.status(500).json({ message: 'Server authentication configuration error' });
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    req.user = decoded;
+    const decoded = jwt.verify(token, jwtSecret);
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      name: decoded.name,
+      role: decoded.role,
+      isAdmin: decoded.isAdmin
+    };
     next();
   } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired token', error: err.message });
+    return res.status(401).json({ message: 'Invalid or expired token', error: err.message });
   }
 };
 
 /**
- * Middleware to enforce Admin-only access on write / update / delete operations
+ * Backward compatibility alias: every authenticated user has access to their own data
  */
-export const requireAdmin = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      message: 'Access Denied: Only Admin can create, modify, or delete CRM records. Please log in as Admin.'
-    });
-  }
+export const requireAdmin = authenticateToken;
 
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    req.user = decoded;
-
-    if (!decoded.isAdmin && decoded.accessRole !== 'admin') {
-      return res.status(403).json({
-        message: 'Access Denied: You have Viewer (Read-Only) permissions. Only Admin can modify CRM data.'
-      });
-    }
-
-    next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired token', error: err.message });
-  }
-};

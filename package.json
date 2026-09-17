@@ -8,6 +8,7 @@
     "server": "node --watch server/index.js",
     "client": "vite",
     "check-db": "node server/check-db.js",
+    "test-auth": "node server/test-auth-isolation.js",
     "test-rbac": "node server/test-rbac.js",
     "build": "vite build",
     "preview": "vite preview"

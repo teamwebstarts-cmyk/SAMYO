@@ -6,60 +6,68 @@ export const AuthService = {
     return StorageService.get(StorageService.KEYS.USER, null);
   },
 
+  getToken() {
+    return localStorage.getItem('techcrm_token');
+  },
+
   isAdmin() {
+    // In team CRM mode, all authenticated users have full access to manage their own records
     const user = this.getCurrentUser();
-    if (!user) return false;
-    return Boolean(
-      user.isAdmin === true ||
-      user.accessRole === 'admin' ||
-      (user.email && user.email.toLowerCase() === 'neha.jain@techcrm.io')
-    );
+    return Boolean(user);
+  },
+
+  isSystemAdmin() {
+    const user = this.getCurrentUser();
+    return Boolean(user?.isAdmin || user?.accessRole === 'admin');
   },
 
   isViewer() {
-    return !this.isAdmin();
+    return false;
   },
 
   getRoleBadgeText() {
-    return this.isAdmin() ? 'Admin (Full Access)' : 'Viewer (Read Only)';
+    const user = this.getCurrentUser();
+    return user?.role || 'Team Member';
   },
 
   isAuthenticated() {
-    const token = localStorage.getItem('techcrm_token');
-    const isLoggedIn = localStorage.getItem('techcrm_logged_in') === 'true';
-    return Boolean(token && isLoggedIn);
+    const token = this.getToken();
+    return Boolean(token);
+  },
+
+  async validateSession() {
+    const token = this.getToken();
+    if (!token) {
+      this.clearSession();
+      return null;
+    }
+
+    try {
+      const res = await ApiService.get('/auth/me');
+      if (res && res.user) {
+        StorageService.set(StorageService.KEYS.USER, res.user);
+        localStorage.setItem('techcrm_logged_in', 'true');
+        return res.user;
+      }
+      this.clearSession();
+      return null;
+    } catch (err) {
+      console.warn('Session validation failed:', err.message);
+      this.clearSession();
+      return null;
+    }
   },
 
   async login(email, password) {
-    try {
-      const res = await ApiService.post('/auth/login', { email, password });
-      if (res.token) {
-        localStorage.setItem('techcrm_token', res.token);
-      }
-      if (res.user) {
-        StorageService.set(StorageService.KEYS.USER, res.user);
-      }
-      localStorage.setItem('techcrm_logged_in', 'true');
-      return { success: true, user: res.user };
-    } catch (err) {
-      // Graceful Fallback: If backend is offline or unreachable, allow demo account to sign in locally
-      const isDemoAdmin = email.toLowerCase() === 'neha.jain@techcrm.io' && password === 'password';
-      if (isDemoAdmin) {
-        const demoUser = {
-          name: 'Neha Jain',
-          email: 'neha.jain@techcrm.io',
-          role: 'Web Developer / Outreach Specialist',
-          isAdmin: true,
-          accessRole: 'admin',
-          avatar: 'NJ'
-        };
-        localStorage.setItem('techcrm_token', 'demo-offline-token-' + Date.now());
-        StorageService.set(StorageService.KEYS.USER, demoUser);
-        localStorage.setItem('techcrm_logged_in', 'true');
-        return { success: true, user: demoUser, isOfflineDemo: true };
-      }
-      throw err;
+    const res = await ApiService.post('/auth/login', { email, password });
+    if (res.token) {
+      localStorage.setItem('techcrm_token', res.token);
     }
+    if (res.user) {
+      StorageService.set(StorageService.KEYS.USER, res.user);
+    }
+    localStorage.setItem('techcrm_logged_in', 'true');
+    return { success: true, user: res.user };
   },
 
   async register(name, email, password, role) {
@@ -74,11 +82,14 @@ export const AuthService = {
     return { success: true, user: res.user };
   },
 
+  clearSession() {
+    StorageService.clearUserData();
+  },
+
   logout() {
-    localStorage.removeItem('techcrm_token');
-    localStorage.setItem('techcrm_logged_in', 'false');
-    localStorage.removeItem(StorageService.KEYS.USER);
+    this.clearSession();
     window.location.hash = '#/login';
     window.location.reload();
   }
 };
+

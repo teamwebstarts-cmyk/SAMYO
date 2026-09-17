@@ -1,10 +1,16 @@
 import { StorageService } from './storage.js';
 import { ApiService } from './api.js';
+import { AuthService } from './auth.js';
 
 let leadsCache = [];
 let isLoadedFromMongo = false;
 
 export const LeadsService = {
+  resetCache() {
+    leadsCache = [];
+    isLoadedFromMongo = false;
+  },
+
   // Sync leads with MongoDB Atlas cloud database
   async fetchFromMongoDB() {
     try {
@@ -75,7 +81,7 @@ export const LeadsService = {
       notes: data.notes ? [{
         text: data.notes,
         createdAt: new Date().toISOString(),
-        author: 'Neha Jain'
+        author: AuthService.getCurrentUser()?.name || 'Me'
       }] : []
     };
 
@@ -186,10 +192,12 @@ export const LeadsService = {
     const lead = this.getById(id);
     if (!lead || !noteText.trim()) return null;
 
+    const authorName = AuthService.getCurrentUser()?.name || 'Me';
+
     try {
       const serverUpdated = await ApiService.post(`/leads/${id}/notes`, {
         text: noteText.trim(),
-        author: 'Neha Jain'
+        author: authorName
       });
       if (serverUpdated) {
         const idx = leadsCache.findIndex(l => l.id === id || l._id === id);
@@ -206,7 +214,7 @@ export const LeadsService = {
         id: 'note-' + Date.now(),
         text: noteText.trim(),
         createdAt: new Date().toISOString(),
-        author: 'Neha Jain'
+        author: authorName
       };
       lead.notes = [newNote, ...(lead.notes || [])];
       StorageService.set(StorageService.KEYS.LEADS, leadsCache);

@@ -10,6 +10,10 @@ import activityRoutes from './routes/activities.js';
 // Load environment variables from .env
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error('❌ CRITICAL ERROR: JWT_SECRET environment variable is missing from .env!');
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;

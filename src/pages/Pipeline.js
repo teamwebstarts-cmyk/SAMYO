@@ -5,6 +5,7 @@ import { KanbanColumn } from '../components/KanbanColumn.js';
 import { LeadDrawer } from '../components/LeadDrawer.js';
 import { LostReasonModal } from '../components/LostReasonModal.js';
 import { Toast } from '../components/Toast.js';
+import { getIcon } from '../utils/icons.js';
 
 export const PipelinePage = {
   currentSearch: '',
@@ -83,13 +84,10 @@ export const PipelinePage = {
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center;">
-            ${isAdmin ? `
               <!-- Customize Columns Dropdown -->
               <div style="position: relative;">
                 <button class="btn btn-secondary" id="btn-toggle-column-menu" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/>
-                  </svg>
+                  ${getIcon('columns', { size: 15 })}
                   Columns ▾
                 </button>
 
@@ -114,33 +112,17 @@ export const PipelinePage = {
               </div>
 
               <button class="btn btn-primary" id="btn-pipeline-add-lead">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                ${getIcon('plus', { size: 16 })}
                 Add Lead
               </button>
-            ` : `
-              <span style="font-size: 12px; color: #854D0E; background: #FEF9C3; border: 1px solid #FEF08A; padding: 6px 12px; border-radius: 8px; font-weight: 600;">
-                👁️ View Only
-              </span>
-            `}
           </div>
         </div>
-
-        ${!isAdmin ? `
-          <!-- Read-Only Banner for Viewers -->
-          <div style="background: #FEF9C3; border: 1px solid #FEF08A; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #854D0E;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 18px;">👁️</span>
-              <span><strong>Viewer (Read-Only) Mode:</strong> You can view all live leads, stages, and metrics. Modifying leads, drag-and-drop, and column editing are restricted to Admin.</span>
-            </div>
-            <span style="font-size: 11px; font-weight: 700; background: #FEF08A; color: #713F12; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Read Only</span>
-          </div>
-        ` : ''}
 
         <!-- Filter & Search Controls Bar -->
         <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: var(--space-20); flex-wrap: wrap;">
           <div style="display: flex; gap: 12px; align-items: center; flex: 1; min-width: 280px; max-width: 450px;">
             <div class="search-input-wrapper" style="width: 100%;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              ${getIcon('search', { size: 15 })}
               <input type="text" id="pipeline-search" class="input" placeholder="Search leads by name or company..." value="${this.currentSearch}" />
             </div>
           </div>
@@ -504,63 +486,49 @@ export const PipelinePage = {
         if (leadId) LeadDrawer.open(leadId);
       });
 
-      // Drag Start only if Admin
-      if (isAdmin) {
-        card.addEventListener('dragstart', (e) => {
-          this.draggedLeadId = card.getAttribute('data-id');
-          card.classList.add('is-dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', this.draggedLeadId);
-        });
+      card.addEventListener('dragstart', (e) => {
+        this.draggedLeadId = card.getAttribute('data-id');
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.draggedLeadId);
+      });
 
-        // Drag End
-        card.addEventListener('dragend', () => {
-          card.classList.remove('is-dragging');
-          this.draggedLeadId = null;
-          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-        });
-      } else {
-        // Prevent accidental drag for viewers
-        card.addEventListener('dragstart', (e) => e.preventDefault());
-      }
+      card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+        this.draggedLeadId = null;
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      });
     });
 
-    // Drop Targets (only active if Admin)
-    if (isAdmin) {
-      const dropZones = container.querySelectorAll('.kanban-column, .outcome-drop-zone');
-      dropZones.forEach(zone => {
-        zone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          zone.classList.add('drag-over');
-        });
-
-        zone.addEventListener('dragleave', (e) => {
-          if (!zone.contains(e.relatedTarget)) {
-            zone.classList.remove('drag-over');
-          }
-        });
-
-        zone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          zone.classList.remove('drag-over');
-
-          const leadId = e.dataTransfer.getData('text/plain') || this.draggedLeadId;
-          const newStage = zone.getAttribute('data-stage');
-
-          if (leadId && newStage) {
-            this.handleLeadDrop(leadId, newStage);
-          }
-        });
+    const dropZones = container.querySelectorAll('.kanban-column, .outcome-drop-zone');
+    dropZones.forEach(zone => {
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        zone.classList.add('drag-over');
       });
-    }
+
+      zone.addEventListener('dragleave', (e) => {
+        if (!zone.contains(e.relatedTarget)) {
+          zone.classList.remove('drag-over');
+        }
+      });
+
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+
+        const leadId = e.dataTransfer.getData('text/plain') || this.draggedLeadId;
+        const newStage = zone.getAttribute('data-stage');
+
+        if (leadId && newStage) {
+          this.handleLeadDrop(leadId, newStage);
+        }
+      });
+    });
   },
 
   async handleLeadDrop(leadId, newStage) {
-    if (!AuthService.isAdmin()) {
-      Toast.show('Access Denied: Only Admin can move leads to another stage', 'error');
-      return;
-    }
 
     const lead = LeadsService.getById(leadId);
     if (!lead || lead.status === newStage) return;

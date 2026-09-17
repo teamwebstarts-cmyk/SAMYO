@@ -34,23 +34,14 @@ class App {
     this.init();
   }
 
-  init() {
-    // Ensure seed data is ready
+  async init() {
+    // Ensure storage structure is initialized
     StorageService.init();
+
     // Restore sidebar collapsed preference
     if (localStorage.getItem('techcrm_sidebar_collapsed') === 'true') {
       document.body.classList.add('sidebar-collapsed');
     }
-
-    // Sync fresh leads and followups from MongoDB Atlas cloud database
-    Promise.all([
-      LeadsService.fetchFromMongoDB(),
-      FollowUpsService.fetchFromMongoDB()
-    ]).then(() => {
-      this.renderCurrentView();
-      // Notify components that MongoDB data is ready
-      window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
-    });
 
     // Mount permanent modal & drawer containers
     this.mountModals();
@@ -61,11 +52,11 @@ class App {
     // Router listeners
     window.addEventListener('hashchange', () => this.handleRoute());
 
-    // Initial route handling
+    // Initial route handling with session verification
     if (!window.location.hash) {
       window.location.hash = '#/dashboard';
     } else {
-      this.handleRoute();
+      await this.handleRoute();
     }
   }
 
@@ -90,24 +81,24 @@ class App {
 
   registerGlobalEvents() {
     window.addEventListener('techcrm:open-add-lead', () => {
-      if (!AuthService.isAdmin()) {
-        Toast.show('Action restricted: Only administrators can create leads', 'warning');
+      if (!AuthService.isAuthenticated()) {
+        window.location.hash = '#/login';
         return;
       }
       AddLeadModal.open();
     });
 
     window.addEventListener('techcrm:open-schedule-followup', () => {
-      if (!AuthService.isAdmin()) {
-        Toast.show('Action restricted: Only administrators can schedule tasks', 'warning');
+      if (!AuthService.isAuthenticated()) {
+        window.location.hash = '#/login';
         return;
       }
       ScheduleFollowupModal.open();
     });
 
     window.addEventListener('techcrm:confirm-delete', (e) => {
-      if (!AuthService.isAdmin()) {
-        Toast.show('Action restricted: Only administrators can delete records', 'warning');
+      if (!AuthService.isAuthenticated()) {
+        window.location.hash = '#/login';
         return;
       }
       if (e.detail?.leadId) {
@@ -128,8 +119,25 @@ class App {
     return cleanPath || '/dashboard';
   }
 
-  handleRoute() {
+  async handleRoute() {
     const path = this.getRoutePath();
+
+    // If a token exists, validate session against /api/auth/me
+    if (AuthService.getToken()) {
+      try {
+        const user = await AuthService.validateSession();
+        if (!user && path !== '/login') {
+          window.location.hash = '#/login';
+          return;
+        }
+      } catch {
+        AuthService.clearSession();
+        if (path !== '/login') {
+          window.location.hash = '#/login';
+          return;
+        }
+      }
+    }
 
     // Auth guard
     if (path !== '/login' && !AuthService.isAuthenticated()) {
@@ -143,6 +151,20 @@ class App {
     }
 
     this.currentRoute = path;
+
+    // Fetch user's CRM data only when authenticated
+    if (AuthService.isAuthenticated() && path !== '/login') {
+      Promise.all([
+        LeadsService.fetchFromMongoDB(),
+        FollowUpsService.fetchFromMongoDB()
+      ]).then(() => {
+        this.renderCurrentView();
+        window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+      }).catch(err => {
+        console.warn('Error fetching CRM data:', err.message);
+      });
+    }
+
     this.renderCurrentView();
   }
 

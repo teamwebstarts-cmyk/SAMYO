@@ -1,100 +1,14 @@
 import express from 'express';
 import { Lead } from '../models/Lead.js';
 import { Activity } from '../models/Activity.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Initial Seed data for first launch
-const INITIAL_LEADS = [
-  {
-    name: 'Rahul Sharma',
-    company: 'ABC Technologies',
-    designation: 'Founder & CEO',
-    linkedinUrl: 'https://linkedin.com/in/rahul-sharma-abctech',
-    companyWebsite: 'https://abctechnologies.io',
-    industry: 'SaaS',
-    location: 'Jaipur, India',
-    requirements: ['Website', 'Mobile App'],
-    priority: 'high',
-    status: 'connected',
-    potentialValue: 100000,
-    notes: [
-      { text: 'Interested in redesigning company website and building MVP mobile app.', author: 'Neha Jain' }
-    ],
-    activities: [
-      { title: 'Connected on LinkedIn', time: '10 min ago' },
-      { title: 'Connection Request Sent', time: 'Sep 3' }
-    ]
-  },
-  {
-    name: 'Priya Sharma',
-    company: 'ABC Technologies',
-    designation: 'CTO',
-    linkedinUrl: 'https://linkedin.com/in/priya-sharma-cto',
-    companyWebsite: 'https://abctechnologies.io',
-    industry: 'SaaS',
-    location: 'Jaipur, India',
-    requirements: ['AI/ML', 'Website'],
-    priority: 'high',
-    status: 'connected',
-    potentialValue: 150000,
-    notes: [
-      { text: 'Wants to explore integrating AI chatbot into customer onboarding.', author: 'Neha Jain' }
-    ],
-    activities: [
-      { title: 'Accepted LinkedIn connection', time: '2 hours ago' }
-    ]
-  },
-  {
-    name: 'Aman Verma',
-    company: 'XYZ Pvt Ltd',
-    designation: 'Founder & CEO',
-    linkedinUrl: 'https://linkedin.com/in/aman-verma-xyz',
-    companyWebsite: 'https://xyzfintech.in',
-    industry: 'FinTech',
-    location: 'Bengaluru, India',
-    requirements: ['Mobile App', 'Software'],
-    priority: 'medium',
-    status: 'proposal',
-    potentialValue: 250000,
-    notes: [
-      { text: 'Sent formal proposal for custom payment gateway app.', author: 'Neha Jain' }
-    ],
-    activities: [
-      { title: 'Moved to Proposal Sent', time: 'Yesterday' }
-    ]
-  },
-  {
-    name: 'Vikram Aditya',
-    company: 'Innovate Labs',
-    designation: 'Chief Executive Officer',
-    linkedinUrl: 'https://linkedin.com/in/vikram-innovate',
-    companyWebsite: 'https://innovatelabs.ai',
-    industry: 'AI/ML',
-    location: 'Gurugram, India',
-    requirements: ['AI/ML', 'Software'],
-    priority: 'high',
-    status: 'won',
-    potentialValue: 320000,
-    notes: [
-      { text: 'Contract signed! Starting phase 1 LLM model integration next week.', author: 'Neha Jain' }
-    ],
-    activities: [
-      { title: 'Contract Signed - Deal Won! 🏆', time: 'Sep 5' }
-    ]
-  }
-];
-
-// GET /api/leads - Fetch all leads (auto-seed if empty)
-router.get('/', async (req, res) => {
+// GET /api/leads - Fetch all leads belonging to authenticated user
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    let leads = await Lead.find().sort({ createdAt: -1 });
-
-    if (leads.length === 0) {
-      leads = await Lead.insertMany(INITIAL_LEADS);
-    }
-
+    const leads = await Lead.find({ ownerId: req.user.id }).sort({ createdAt: -1 });
     res.json(leads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -102,10 +16,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/leads/:id - Fetch single lead
-router.get('/:id', async (req, res) => {
+// GET /api/leads/:id - Fetch single lead belonging to authenticated user
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({ _id: req.params.id, ownerId: req.user.id });
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
@@ -115,8 +29,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/leads - Create new lead (Admin only)
-router.post('/', requireAdmin, async (req, res) => {
+// POST /api/leads - Create new lead belonging to authenticated user
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const {
       name,
@@ -133,23 +47,30 @@ router.post('/', requireAdmin, async (req, res) => {
       notes
     } = req.body;
 
-    if (!name) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ message: 'Name is required' });
     }
 
+    const initialNotes = Array.isArray(notes) ? notes.map(n => ({
+      text: typeof n === 'string' ? n : n.text,
+      author: (typeof n === 'object' && n.author) ? n.author : (req.user.name || 'Team Member'),
+      createdAt: new Date()
+    })) : [];
+
     const newLead = new Lead({
-      name,
-      company,
+      ownerId: req.user.id,
+      name: name.trim(),
+      company: company || '',
       designation: designation || '',
       linkedinUrl: linkedinUrl || '',
       companyWebsite: companyWebsite || '',
       industry: industry || 'Technology',
       location: location || '',
-      requirements: requirements || [],
+      requirements: Array.isArray(requirements) ? requirements : [],
       priority: priority || 'medium',
       status: status || 'new',
       potentialValue: Number(potentialValue) || 0,
-      notes: notes || [],
+      notes: initialNotes,
       activities: [
         {
           title: 'Lead created in CRM',
@@ -161,8 +82,9 @@ router.post('/', requireAdmin, async (req, res) => {
 
     const savedLead = await newLead.save();
 
-    // Persist global activity in MongoDB
+    // Persist user-scoped activity in MongoDB
     Activity.create({
+      ownerId: req.user.id,
       text: `${savedLead.name}${savedLead.company && savedLead.company !== 'Individual' ? ` (${savedLead.company})` : ''} added as New Lead`,
       type: 'new'
     }).catch(err => console.warn('Activity log error:', err.message));
@@ -174,12 +96,15 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/leads/:id - Update lead (Admin only)
-router.put('/:id', requireAdmin, async (req, res) => {
+// PUT /api/leads/:id - Update lead belonging to authenticated user
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const updatedLead = await Lead.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
+    // Strip client-sent ownership fields to prevent tampering
+    const { ownerId, _id, id, ...safeUpdates } = req.body;
+
+    const updatedLead = await Lead.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user.id },
+      { $set: safeUpdates },
       { new: true, runValidators: true }
     );
 
@@ -193,20 +118,17 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/leads/:id/status - Update stage/status (Admin only)
-router.patch('/:id/status', requireAdmin, async (req, res) => {
+// PATCH /api/leads/:id/status - Update stage/status of authenticated user's lead
+router.patch('/:id/status', authenticateToken, async (req, res) => {
   try {
     const { status, lostReason } = req.body;
-    const update = { status };
-    if (lostReason !== undefined) update.lostReason = lostReason;
-
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({ _id: req.params.id, ownerId: req.user.id });
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
 
     lead.status = status;
-    if (lostReason) lead.lostReason = lostReason;
+    if (lostReason !== undefined) lead.lostReason = lostReason;
 
     lead.activities.unshift({
       title: `Moved to ${status.replace('_', ' ').toUpperCase()}`,
@@ -216,7 +138,7 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
 
     await lead.save();
 
-    // Persist global activity in MongoDB
+    // Persist activity in MongoDB
     const statusLabels = {
       new: 'New Leads',
       request_sent: 'Request Sent',
@@ -228,6 +150,7 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
       lost: 'Lost'
     };
     Activity.create({
+      ownerId: req.user.id,
       text: `${lead.name} moved to ${statusLabels[status] || status}`,
       type: status
     }).catch(err => console.warn('Activity log error:', err.message));
@@ -238,22 +161,22 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
   }
 });
 
-// POST /api/leads/:id/notes - Add note to lead (Admin only)
-router.post('/:id/notes', requireAdmin, async (req, res) => {
+// POST /api/leads/:id/notes - Add note to authenticated user's lead
+router.post('/:id/notes', authenticateToken, async (req, res) => {
   try {
     const { text, author } = req.body;
-    if (!text) {
+    if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ message: 'Note text is required' });
     }
 
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({ _id: req.params.id, ownerId: req.user.id });
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
 
     lead.notes.unshift({
-      text,
-      author: author || 'Neha Jain',
+      text: text.trim(),
+      author: author || req.user.name || 'Team Member',
       createdAt: new Date()
     });
 
@@ -270,10 +193,10 @@ router.post('/:id/notes', requireAdmin, async (req, res) => {
   }
 });
 
-// DELETE /api/leads/:id - Delete lead (Admin only)
-router.delete('/:id', requireAdmin, async (req, res) => {
+// DELETE /api/leads/:id - Delete authenticated user's lead
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const deletedLead = await Lead.findByIdAndDelete(req.params.id);
+    const deletedLead = await Lead.findOneAndDelete({ _id: req.params.id, ownerId: req.user.id });
     if (!deletedLead) {
       return res.status(404).json({ message: 'Lead not found' });
     }

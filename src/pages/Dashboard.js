@@ -1,6 +1,7 @@
 import { LeadsService } from '../services/leads.js';
 import { StorageService } from '../services/storage.js';
 import { AuthService } from '../services/auth.js';
+import { getIcon } from '../utils/icons.js';
 
 export const DashboardPage = {
   render() {
@@ -11,7 +12,7 @@ export const DashboardPage = {
 
     return `
       <div class="page-container">
-        <!-- Page Header -->
+        <!-- Top Banner / Greeting -->
         <div class="page-header">
           <div class="page-title-group">
             <h1>Good morning, ${user?.name ? user.name.split(' ')[0] : 'User'} 👋</h1>
@@ -22,16 +23,10 @@ export const DashboardPage = {
               View Lead Board →
             </button>
 
-            ${isAdmin ? `
-              <button class="btn btn-primary" id="btn-dash-add-lead">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Add Lead
-              </button>
-            ` : `
-              <span style="font-size: 12px; color: #854D0E; background: #FEF9C3; border: 1px solid #FEF08A; padding: 6px 12px; border-radius: 8px; font-weight: 600;">
-                👁️ Read-Only Mode
-              </span>
-            `}
+            <button class="btn btn-primary" id="btn-dash-add-lead">
+              ${getIcon('plus', { size: 16 })}
+              Add Lead
+            </button>
           </div>
         </div>
 

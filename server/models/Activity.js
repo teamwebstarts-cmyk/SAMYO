@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const activitySchema = new mongoose.Schema({
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
   text: {
     type: String,
     required: true,

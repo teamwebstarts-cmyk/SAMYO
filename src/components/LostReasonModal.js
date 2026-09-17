@@ -1,6 +1,7 @@
 import { LeadsService } from '../services/leads.js';
 import { AuthService } from '../services/auth.js';
 import { Toast } from './Toast.js';
+import { getIcon } from '../utils/icons.js';
 
 export const LostReasonModal = {
   currentLeadId: null,
@@ -12,7 +13,7 @@ export const LostReasonModal = {
           <div class="modal-header">
             <h2 class="modal-title" style="color: var(--danger);">Mark Lead as Lost</h2>
             <button type="button" class="btn btn-ghost btn-icon" id="btn-close-lost-modal">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              ${getIcon('close', { size: 20 })}
             </button>
           </div>
 
@@ -108,8 +109,8 @@ export const LostReasonModal = {
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!AuthService.isAdmin()) {
-          Toast.show('Action restricted: Only administrators can update lead status', 'warning');
+        if (!AuthService.isAuthenticated()) {
+          Toast.show('Please log in to update lead status', 'warning');
           this.close();
           return;
         }

@@ -2,11 +2,11 @@ import { AuthService } from '../services/auth.js';
 import { StorageService } from '../services/storage.js';
 import { ApiService } from '../services/api.js';
 import { NotificationPanel } from './NotificationPanel.js';
+import { getIcon } from '../utils/icons.js';
 
 export const Header = {
   render() {
-    const user = AuthService.getCurrentUser() || { name: 'User', role: 'Viewer', avatar: 'U', email: '' };
-    const isAdmin = AuthService.isAdmin();
+    const user = AuthService.getCurrentUser() || { name: 'User', role: 'Team Member', avatar: 'U', email: '' };
     const notifications = StorageService.get(StorageService.KEYS.NOTIFICATIONS, []);
     const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -17,19 +17,16 @@ export const Header = {
             <span>🚀</span> TechCRM
           </div>
           <div class="search-input-wrapper" style="width: 100%;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
+            ${getIcon('search', { size: 16 })}
             <input type="text" id="global-search-input" class="input" placeholder="Search Lead Board..." />
           </div>
         </div>
 
         <div class="header-right">
-          <!-- Role Badge (Admin vs Viewer) -->
-          <div class="user-role-pill" style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; ${isAdmin ? 'background: #EEF2FF; border: 1px solid #C7D2FE; color: #4338CA;' : 'background: #FEF9C3; border: 1px solid #FEF08A; color: #854D0E;'}" title="${isAdmin ? 'You have Full Administrator Privileges' : 'You are viewing in Read-Only mode'}">
-            <span>${isAdmin ? '👑' : '👁️'}</span>
-            <span>${isAdmin ? 'Admin' : 'Viewer (Read Only)'}</span>
+          <!-- Role Pill -->
+          <div class="user-role-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; background: #EEF2FF; border: 1px solid #C7D2FE; color: #4338CA;" title="Account Role">
+            ${getIcon('user', { size: 13, color: '#4338CA' })}
+            <span>${user.role ? user.role.split('/')[0].trim() : 'Team Member'}</span>
           </div>
 
           <!-- MongoDB Atlas Live Connection Status -->
@@ -41,10 +38,7 @@ export const Header = {
           <!-- Notification Bell -->
           <div style="position: relative;">
             <button id="notif-toggle-btn" class="header-icon-btn" title="Notifications" aria-label="Notifications">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
+              ${getIcon('bell', { size: 18 })}
               ${unreadCount > 0 ? `<span id="notif-badge-count" class="badge-count">${unreadCount}</span>` : ''}
             </button>
             ${NotificationPanel.render()}
@@ -53,33 +47,31 @@ export const Header = {
           <!-- User Menu -->
           <div style="position: relative;">
             <button id="user-menu-btn" class="user-profile-btn" aria-haspopup="true">
-              <div class="avatar">${user.avatar || 'NJ'}</div>
+              <div class="avatar">${user.avatar || (user.name ? user.name.charAt(0).toUpperCase() : 'U')}</div>
               <div class="user-profile-info">
                 <div class="user-profile-name">${user.name}</div>
-                <div class="user-profile-role">${user.role.split('/')[0].trim()}</div>
+                <div class="user-profile-role">${(user.role || 'Team Member').split('/')[0].trim()}</div>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              ${getIcon('chevronDown', { size: 14, style: 'color: var(--text-secondary);' })}
             </button>
 
             <div id="user-dropdown-menu" class="dropdown-menu">
               <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 4px;">
                 <div style="font-size: 13px; font-weight: 600; color: var(--text-main);">${user.name}</div>
                 <div style="font-size: 11px; color: var(--text-muted);">${user.email || ''}</div>
-                <div style="margin-top: 4px; font-size: 11px; font-weight: 600; color: ${isAdmin ? '#4F46E5' : '#854D0E'};">${isAdmin ? '👑 Administrator (Full Access)' : '👁️ Viewer (Read Only)'}</div>
+                <div style="margin-top: 4px; font-size: 11px; font-weight: 600; color: #4F46E5;">${user.role || 'Team Member'}</div>
               </div>
               <a href="#/settings" class="dropdown-item">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                ${getIcon('user', { size: 15 })}
                 My Profile
               </a>
               <a href="#/settings" class="dropdown-item">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                ${getIcon('settings', { size: 15 })}
                 Preferences
               </a>
               <div class="dropdown-divider"></div>
               <button id="header-logout-btn" class="dropdown-item danger" style="width: 100%; background: none; border: none; font: inherit;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                ${getIcon('logout', { size: 15 })}
                 Log out
               </button>
             </div>

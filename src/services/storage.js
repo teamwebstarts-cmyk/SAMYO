@@ -297,6 +297,12 @@ const INITIAL_NOTIFICATIONS = [
 
 export const StorageService = {
   init() {
+    // If there is no authenticated token, clear any lingering user or CRM cache
+    if (!localStorage.getItem('techcrm_token')) {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem('techcrm_logged_in');
+    }
+
     // Clean up stale mock seeds so real MongoDB Atlas data displays
     const cachedLeads = this.get(STORAGE_KEYS.LEADS);
     if (Array.isArray(cachedLeads) && cachedLeads.length > 0 && cachedLeads[0].id === 'lead-1') {
@@ -307,18 +313,19 @@ export const StorageService = {
       localStorage.removeItem(STORAGE_KEYS.FOLLOWUPS);
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.ACTIVITIES)) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(INITIAL_ACTIVITIES));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
-      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.USER)) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(INITIAL_USER));
-    }
     if (!localStorage.getItem(STORAGE_KEYS.PIPELINE_STAGES)) {
       localStorage.setItem(STORAGE_KEYS.PIPELINE_STAGES, JSON.stringify(DEFAULT_STAGES));
     }
+  },
+
+  clearUserData() {
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.LEADS);
+    localStorage.removeItem(STORAGE_KEYS.FOLLOWUPS);
+    localStorage.removeItem(STORAGE_KEYS.ACTIVITIES);
+    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    localStorage.removeItem('techcrm_token');
+    localStorage.removeItem('techcrm_logged_in');
   },
 
   get(key, defaultValue = null) {

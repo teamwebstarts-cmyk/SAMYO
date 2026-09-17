@@ -37,7 +37,10 @@ async function handleResponse(response) {
   }
   if (!response.ok) {
     const message = (data && (data.message || data.error)) || `HTTP ${response.status}: Server not reachable or endpoint not found`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
   return data;
 }

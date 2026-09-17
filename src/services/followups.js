@@ -5,6 +5,11 @@ let followupsCache = [];
 let isLoadedFromMongo = false;
 
 export const FollowUpsService = {
+  resetCache() {
+    followupsCache = [];
+    isLoadedFromMongo = false;
+  },
+
   async fetchFromMongoDB() {
     try {
       const serverFollowups = await ApiService.get('/followups');

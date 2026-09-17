@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const noteSchema = new mongoose.Schema({
   text: { type: String, required: true },
-  author: { type: String, default: 'Neha Jain' },
+  author: { type: String, default: 'Team Member' },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: { virtuals: true, transform: (doc, ret) => { ret.id = ret._id; return ret; } }
@@ -17,6 +17,12 @@ const activitySchema = new mongoose.Schema({
 });
 
 const leadSchema = new mongoose.Schema({
+  ownerId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true, 
+    index: true 
+  },
   name: { type: String, required: true, trim: true },
   company: { type: String, default: '', trim: true },
   designation: { type: String, default: '' },

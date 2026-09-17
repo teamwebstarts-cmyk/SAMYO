@@ -1,16 +1,17 @@
 import { AuthService } from '../services/auth.js';
+import { getIcon } from '../utils/icons.js';
 
 export const LeadCard = {
   getTechIcon(tech) {
     switch (tech.toLowerCase()) {
-      case 'website': return '🌐';
+      case 'website': return getIcon('globe', { size: 12 });
       case 'mobile app':
-      case 'mobile': return '📱';
+      case 'mobile': return getIcon('smartphone', { size: 12 });
       case 'ai/ml':
-      case 'ai': return '🤖';
-      case 'ui/ux': return '🎨';
-      case 'software': return '💻';
-      default: return '⚡';
+      case 'ai': return getIcon('cpu', { size: 12 });
+      case 'ui/ux': return getIcon('palette', { size: 12 });
+      case 'software': return getIcon('code', { size: 12 });
+      default: return getIcon('zap', { size: 12 });
     }
   },
 
@@ -35,7 +36,7 @@ export const LeadCard = {
 
     let priorityBadge = '';
     if (lead.priority === 'high') {
-      priorityBadge = `<span class="badge badge-priority-high">🔥 High</span>`;
+      priorityBadge = `<span class="badge badge-priority-high" style="display: inline-flex; align-items: center; gap: 4px;">${getIcon('flame', { size: 12, color: '#DC2626' })} High</span>`;
     } else if (lead.priority === 'medium') {
       priorityBadge = `<span class="badge badge-priority-medium">Medium</span>`;
     } else {
@@ -43,7 +44,7 @@ export const LeadCard = {
     }
 
     return `
-      <div class="lead-card" draggable="${isAdmin ? 'true' : 'false'}" data-id="${lead.id}" data-status="${lead.status}" style="${isAdmin ? '' : 'cursor: pointer;'}">
+      <div class="lead-card" draggable="true" data-id="${lead.id}" data-status="${lead.status}">
         <div class="lead-card-header">
           <div class="lead-card-avatar">${initials}</div>
           <div class="lead-card-name" title="${lead.name}">${lead.name}</div>

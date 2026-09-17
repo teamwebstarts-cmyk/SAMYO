@@ -53,18 +53,7 @@ export const LoginPage = {
                 </div>
               </div>
 
-              <!-- Quick Demo Autofill -->
-              <div style="margin-bottom: 20px; font-size: 12px; color: #475569; background: #EEF2FF; padding: 12px; border-radius: 8px; border: 1px solid #C7D2FE; display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                  <div style="font-weight: 600; color: #4338CA;">👑 Admin Demo Account:</div>
-                  <div style="font-size: 11px; color: #6366F1; margin-top: 2px;">neha.jain@techcrm.io / password</div>
-                </div>
-                <button type="button" id="btn-fill-admin-demo" class="btn btn-sm" style="background: #4F46E5; color: white; border: none; padding: 4px 10px; font-size: 11.5px; border-radius: 6px;">
-                  Autofill
-                </button>
-              </div>
-
-              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 600; justify-content: center; border-radius: 8px;">
+              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 600; justify-content: center; border-radius: 8px; margin-top: 10px;">
                 Sign In to TechCRM
               </button>
             </form>
@@ -74,7 +63,7 @@ export const LoginPage = {
           <div id="signup-container" style="display: ${this.activeTab === 'signup' ? 'block' : 'none'};">
             <div style="margin-bottom: 18px;">
               <h2 style="font-size: 16px; font-weight: 600; color: var(--text-main);">Create New Account</h2>
-              <p style="font-size: 13px; color: var(--text-secondary);">Join the team to view CRM analytics and progress</p>
+              <p style="font-size: 13px; color: var(--text-secondary);">Join the team to manage your outreach pipeline</p>
             </div>
 
             <form id="signup-form">
@@ -99,16 +88,11 @@ export const LoginPage = {
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="signup-role">Role / Department <span class="optional">(Optional)</span></label>
-                <input type="text" id="signup-role" class="input" placeholder="e.g. Business Analyst / Guest Reviewer" />
+                <label class="form-label" for="signup-role">Role / Title <span class="optional">(Optional)</span></label>
+                <input type="text" id="signup-role" class="input" placeholder="e.g. Outreach Specialist / Web Developer" />
               </div>
 
-              <!-- Permission Notice -->
-              <div style="margin-bottom: 20px; font-size: 12px; color: #854D0E; background: #FEF9C3; padding: 12px; border-radius: 8px; border: 1px solid #FEF08A; line-height: 1.4;">
-                🔒 <strong>Access Level:</strong> New registrations receive <strong>Viewer (Read-Only)</strong> access. You will be able to view all leads, pipeline stages, and outreach stats without edit privileges.
-              </div>
-
-              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 600; justify-content: center; border-radius: 8px;">
+              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 600; justify-content: center; border-radius: 8px; margin-top: 10px;">
                 Create Account & Enter CRM
               </button>
             </form>
@@ -175,18 +159,6 @@ export const LoginPage = {
       });
     });
 
-    // Autofill Admin Demo
-    const autofillBtn = document.getElementById('btn-fill-admin-demo');
-    if (autofillBtn) {
-      autofillBtn.addEventListener('click', () => {
-        const emailInput = document.getElementById('signin-email');
-        const pwdInput = document.getElementById('signin-password');
-        if (emailInput) emailInput.value = 'neha.jain@techcrm.io';
-        if (pwdInput) pwdInput.value = 'password';
-        Toast.show('👑 Admin demo credentials filled!');
-      });
-    }
-
     // Sign In Form Submission
     const signinForm = document.getElementById('signin-form');
     if (signinForm) {
@@ -208,8 +180,7 @@ export const LoginPage = {
 
         try {
           const res = await AuthService.login(email, password);
-          const roleLabel = AuthService.isAdmin() ? 'Admin 👑' : 'Viewer 👁️';
-          Toast.show(`Welcome back, ${res.user?.name || 'User'}! (${roleLabel})`);
+          Toast.show(`Welcome back, ${res.user?.name || 'User'}!`);
           window.location.hash = '#/dashboard';
           window.location.reload();
         } catch (err) {
@@ -251,8 +222,7 @@ export const LoginPage = {
 
         try {
           const res = await AuthService.register(name, email, password, role);
-          const roleLabel = AuthService.isAdmin() ? 'Admin 👑' : 'Viewer 👁️ (Read Only)';
-          Toast.show(`Account created! Welcome, ${res.user?.name}! (${roleLabel})`);
+          Toast.show(`Account created! Welcome, ${res.user?.name}!`);
           window.location.hash = '#/dashboard';
           window.location.reload();
         } catch (err) {
@@ -267,3 +237,4 @@ export const LoginPage = {
     }
   }
 };
+
