@@ -13,6 +13,11 @@ export const MobileNav = {
         label: 'Lead Board',
         icon: getIcon('leads', { size: 20 })
       },
+      {
+        path: '/team',
+        label: 'Team',
+        icon: getIcon('user', { size: 20 })
+      },
     ];
 
     return `

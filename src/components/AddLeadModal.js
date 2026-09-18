@@ -116,6 +116,13 @@ export const AddLeadModal = {
             </div>
 
             <div class="form-group">
+              <label class="form-label" for="lead-assignee">Assign Lead To <span class="optional">(Creator & Assignee both get edit rights)</span></label>
+              <select id="lead-assignee" class="select">
+                <option value="">Assign to Me (Default)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label class="form-label" for="lead-notes">Initial Outreach Notes <span class="optional">(Optional)</span></label>
               <textarea id="lead-notes" class="textarea" placeholder="Found on LinkedIn, recently posted about needing a tech partner..."></textarea>
             </div>
@@ -130,13 +137,34 @@ export const AddLeadModal = {
     `;
   },
 
-  open() {
+  async open() {
     const modal = document.getElementById('add-lead-modal');
     if (modal) {
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       const nameInput = document.getElementById('lead-name');
       if (nameInput) nameInput.focus();
+
+      // Populate Assignee Select
+      const assigneeSelect = document.getElementById('lead-assignee');
+      if (assigneeSelect) {
+        const currentUser = AuthService.getCurrentUser();
+        const currentUserId = currentUser ? (currentUser.id || currentUser._id) : null;
+        try {
+          const members = await AuthService.getTeamMembers();
+          if (Array.isArray(members) && members.length > 0) {
+            assigneeSelect.innerHTML = members.map(m => {
+              const mId = m._id || m.id;
+              const isMe = String(mId) === String(currentUserId);
+              return `<option value="${mId}" ${isMe ? 'selected' : ''}>${m.name} (${m.role || 'Member'})${isMe ? ' — (Me)' : ''}</option>`;
+            }).join('');
+          } else {
+            assigneeSelect.innerHTML = `<option value="${currentUserId}">Me (${currentUser?.name || 'Current User'})</option>`;
+          }
+        } catch (e) {
+          assigneeSelect.innerHTML = `<option value="${currentUserId}">Me (${currentUser?.name || 'Current User'})</option>`;
+        }
+      }
     }
   },
 
@@ -239,6 +267,7 @@ export const AddLeadModal = {
         const location = document.getElementById('lead-location')?.value.trim() || '';
         const potentialValue = document.getElementById('lead-value')?.value;
         const notes = document.getElementById('lead-notes')?.value.trim() || '';
+        const ownerId = document.getElementById('lead-assignee')?.value || undefined;
 
         // Selected tags
         const selectedTags = tagSelector
@@ -260,7 +289,8 @@ export const AddLeadModal = {
             requirements: selectedTags,
             priority: selectedPriority,
             potentialValue: potentialValue ? Number(potentialValue) : 0,
-            notes
+            notes,
+            ownerId
           });
 
           this.close();

@@ -17,6 +17,11 @@ const activitySchema = new mongoose.Schema({
 });
 
 const leadSchema = new mongoose.Schema({
+  creatorId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    index: true 
+  },
   ownerId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
@@ -34,7 +39,6 @@ const leadSchema = new mongoose.Schema({
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
   status: { 
     type: String, 
-    enum: ['new', 'request_sent', 'connected','followup_scheduled', 'qualified', 'proposal', 'won', 'lost'],
     default: 'new' 
   },
   potentialValue: { type: Number, default: 0 },

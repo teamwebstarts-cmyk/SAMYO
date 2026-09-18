@@ -71,9 +71,6 @@ export const PipelinePage = {
       return matchesSearch && matchesPriority && matchesReq && matchesDate;
     });
 
-    const lostCount = allLeads.filter(l => l.status === 'lost').length;
-    const wonCount = allLeads.filter(l => l.status === 'won').length;
-
     return `
       <div class="page-container">
         <!-- Page Header & Actions -->
@@ -166,18 +163,6 @@ export const PipelinePage = {
                 No columns selected. Click <strong>Columns ▾</strong> above to show columns.
               </div>
             ` : visibleStages.map(stage => KanbanColumn.render(stage, filtered)).join('')}
-          </div>
-        </div>
-
-        <!-- Won & Lost Drop Zones Bar -->
-        <div class="won-lost-drop-bar">
-          <div class="outcome-drop-zone won" data-stage="won" title="Drop here to mark as Won">
-            <span style="font-size: 18px;">🏆</span>
-            <span>WON STAGE (${wonCount} Deals)</span>
-          </div>
-          <div class="outcome-drop-zone lost" data-stage="lost" title="Drop here to record Lost reason">
-            <span style="font-size: 18px;">🔴</span>
-            <span>LOST STAGE (${lostCount} Leads) — Drop to record reason</span>
           </div>
         </div>
       </div>
@@ -487,6 +472,11 @@ export const PipelinePage = {
       });
 
       card.addEventListener('dragstart', (e) => {
+        if (card.getAttribute('draggable') === 'false') {
+          e.preventDefault();
+          Toast.show('View Only: Only the creator or assigned member can move this lead', 'warning');
+          return;
+        }
         this.draggedLeadId = card.getAttribute('data-id');
         card.classList.add('is-dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -500,7 +490,7 @@ export const PipelinePage = {
       });
     });
 
-    const dropZones = container.querySelectorAll('.kanban-column, .outcome-drop-zone');
+    const dropZones = container.querySelectorAll('.kanban-column');
     dropZones.forEach(zone => {
       zone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -529,17 +519,37 @@ export const PipelinePage = {
   },
 
   async handleLeadDrop(leadId, newStage) {
-
     const lead = LeadsService.getById(leadId);
     if (!lead || lead.status === newStage) return;
+
+    // Check permission: Creator, Assignee, or Admin
+    const currentUser = AuthService.getCurrentUser();
+    const currentUserId = currentUser ? String(currentUser.id || currentUser._id) : null;
+    const isAdmin = AuthService.isAdmin();
+    const rawOwner = lead.ownerId;
+    const ownerId = rawOwner ? String(rawOwner._id || rawOwner.id || rawOwner) : null;
+    const rawCreator = lead.creatorId;
+    const creatorId = rawCreator ? String(rawCreator._id || rawCreator.id || rawCreator) : ownerId;
+
+    const canEdit = isAdmin || (currentUserId && (currentUserId === ownerId || currentUserId === creatorId));
+    if (!canEdit) {
+      Toast.show('Permission denied: Only the lead creator or assignee can move this lead', 'error');
+      this.refreshBoard();
+      return;
+    }
 
     if (newStage === 'lost') {
       LostReasonModal.open(leadId);
     } else {
-      await LeadsService.updateStatus(leadId, newStage);
-      const stageName = newStage.replace('_', ' ');
-      Toast.show(`✓ Lead "${lead.name}" moved to ${stageName.toUpperCase()}`);
-      window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+      try {
+        await LeadsService.updateStatus(leadId, newStage);
+        const stageName = newStage.replace('_', ' ');
+        Toast.show(`✓ Lead "${lead.name}" moved to ${stageName.toUpperCase()}`);
+        window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+      } catch (err) {
+        Toast.show(err.message || 'Failed to move lead', 'error');
+        this.refreshBoard();
+      }
     }
   },
 

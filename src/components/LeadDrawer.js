@@ -6,6 +6,15 @@ import { getIcon } from '../utils/icons.js';
 export const LeadDrawer = {
   currentLeadId: null,
 
+  formatExactDateTime(dateString) {
+    if (!dateString) return 'Just now';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'Recently';
+    const datePart = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${datePart} at ${timePart}`;
+  },
+
   render() {
     return `
       <div id="drawer-backdrop" class="drawer-backdrop"></div>
@@ -28,7 +37,23 @@ export const LeadDrawer = {
     const lead = LeadsService.getById(leadId);
     if (!lead) return;
 
+    // Check edit permission: Creator, Assignee, or Admin
+    const currentUser = AuthService.getCurrentUser();
+    const currentUserId = currentUser ? String(currentUser.id || currentUser._id) : null;
     const isAdmin = AuthService.isAdmin();
+
+    const rawOwner = lead.ownerId;
+    const ownerId = rawOwner ? String(rawOwner._id || rawOwner.id || rawOwner) : null;
+    const rawCreator = lead.creatorId;
+    const creatorId = rawCreator ? String(rawCreator._id || rawCreator.id || rawCreator) : ownerId;
+
+    const canEdit = isAdmin || (currentUserId && (currentUserId === ownerId || currentUserId === creatorId));
+
+    // Formatted tracking metadata
+    const dateValue = lead.addedDate || lead.createdAt;
+    const formattedDateTime = this.formatExactDateTime(dateValue);
+    const creatorName = rawCreator?.name || (currentUserId && creatorId === currentUserId ? 'You' : 'Team Member');
+    const ownerName = rawOwner?.name || (currentUserId && ownerId === currentUserId ? 'You' : 'Unassigned');
 
     this.currentLeadId = leadId;
     const drawer = document.getElementById('lead-drawer');
@@ -49,6 +74,26 @@ export const LeadDrawer = {
         </div>
       </div>
 
+      <!-- Date, Time & Ownership Tracking Box -->
+      <div style="margin-bottom: 20px; padding: 12px 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+          <span style="color: #64748B; display: inline-flex; align-items: center; gap: 5px;">
+            🕒 <strong>Added on:</strong> ${formattedDateTime}
+          </span>
+          <span style="color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+            ✍️ <strong>Added by:</strong> <span style="font-weight: 600; color: #1E293B;">${creatorName}</span>
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed #E2E8F0; padding-top: 8px; font-size: 12px;">
+          <span style="color: #64748B; display: inline-flex; align-items: center; gap: 5px;">
+            👤 <strong>Assigned to:</strong> <span style="color: #4F46E5; font-weight: 600;">${ownerName}</span>
+          </span>
+          <span class="badge" style="font-size: 11px; padding: 2px 8px; font-weight: 600; ${canEdit ? 'background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE;' : 'background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1;'}">
+            ${canEdit ? '✓ Can Edit' : '🔒 View Only'}
+          </span>
+        </div>
+      </div>
+
       ${lead.linkedinUrl ? `
       <div style="margin-bottom: 20px;">
         <a href="${lead.linkedinUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 8px;">
@@ -60,8 +105,8 @@ export const LeadDrawer = {
 
       <div class="drawer-field-grid">
         <div class="drawer-field">
-          <span class="drawer-field-label">Status ${!isAdmin ? '(Locked)' : ''}</span>
-          <select id="drawer-status-select" class="select" style="font-weight: 500; ${!isAdmin ? 'background: #F1F5F9; cursor: not-allowed; color: #64748B;' : ''}" ${!isAdmin ? 'disabled title="Read-only for viewers"' : ''}>
+          <span class="drawer-field-label">Stage / Status ${!canEdit ? '(Locked - View Only)' : ''}</span>
+          <select id="drawer-status-select" class="select" style="font-weight: 500; ${!canEdit ? 'background: #F1F5F9; cursor: not-allowed; color: #64748B;' : ''}" ${!canEdit ? 'disabled title="Only creator and assignee can change stage"' : ''}>
             <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New Leads</option>
             <option value="request_sent" ${lead.status === 'request_sent' ? 'selected' : ''}>Request Sent</option>
             <option value="connected" ${lead.status === 'connected' ? 'selected' : ''}>Connected</option>
@@ -111,7 +156,7 @@ export const LeadDrawer = {
           <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">
             Activity Timeline
           </span>
-          ${isAdmin ? `
+          ${canEdit ? `
             <button id="btn-add-activity-trigger" class="btn btn-ghost btn-sm" style="font-size: 11px;">+ Add Activity</button>
           ` : `
             <span class="badge" style="background: #F1F5F9; color: #64748B; font-size: 10.5px;">Read-Only</span>
@@ -119,7 +164,7 @@ export const LeadDrawer = {
         </div>
 
         <!-- Inline Add Activity Form -->
-        ${isAdmin ? `
+        ${canEdit ? `
         <div id="add-activity-box" style="display: none; margin-bottom: 12px; background: #F8FAFC; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
           <input type="text" id="custom-activity-input" class="input" placeholder="e.g. Discussed proposal on call" style="margin-bottom: 8px;" />
           <div style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -156,20 +201,20 @@ export const LeadDrawer = {
           ` : lead.notes.map(note => `
             <div class="note-item">
               <div>${note.text}</div>
-              <div class="note-meta">${note.author || 'Neha'} • ${new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+              <div class="note-meta">${note.author || 'Team Member'} • ${new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
             </div>
           `).join('')}
         </div>
 
         <!-- Add Note Box -->
-        ${isAdmin ? `
+        ${canEdit ? `
         <div style="margin-top: 10px;">
           <textarea id="drawer-new-note" class="textarea" placeholder="Add a note or call update..." style="min-height: 60px;"></textarea>
           <button id="btn-drawer-add-note" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: 100%;">+ Add Note</button>
         </div>
         ` : `
         <div style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 10px; padding: 8px; background: #F8FAFC; border-radius: 6px; text-align: center;">
-          🔒 Adding notes is restricted to Administrator
+          🔒 Adding notes is restricted to creator and assignee
         </div>
         `}
       </div>
@@ -178,14 +223,14 @@ export const LeadDrawer = {
 
       <!-- Bottom Actions -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-        ${isAdmin ? `
+        ${canEdit ? `
         <button id="btn-drawer-delete-lead" class="btn btn-ghost btn-sm" style="color: var(--danger);">
           ${getIcon('trash', { size: 14 })}
           Delete Lead
         </button>
         <button id="btn-drawer-schedule-followup" class="btn btn-secondary btn-sm">Schedule Follow-up</button>
         ` : `
-        <span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Viewing as Guest/Viewer</span>
+        <span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Viewing as Team Member (Read-Only)</span>
         `}
       </div>
     `;
@@ -207,17 +252,19 @@ export const LeadDrawer = {
   },
 
   bindDrawerActions(leadId) {
-
     // Status Change
     const statusSelect = document.getElementById('drawer-status-select');
     if (statusSelect) {
       statusSelect.addEventListener('change', async (e) => {
         const newStatus = e.target.value;
-        await LeadsService.updateStatus(leadId, newStatus);
-        Toast.show(`✓ Status updated to ${newStatus.replace('_', ' ')} in MongoDB`);
-        // Refresh drawer and page
-        window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
-        this.open(leadId);
+        try {
+          await LeadsService.updateStatus(leadId, newStatus);
+          Toast.show(`✓ Status updated to ${newStatus.replace('_', ' ')} in MongoDB`);
+          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+          this.open(leadId);
+        } catch (err) {
+          Toast.show(err.message || 'Failed to update status', 'error');
+        }
       });
     }
 
@@ -244,10 +291,14 @@ export const LeadDrawer = {
       saveAct.addEventListener('click', async () => {
         const text = actInput.value.trim();
         if (text) {
-          await LeadsService.addActivity(leadId, text);
-          Toast.show('Activity logged successfully');
-          window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
-          this.open(leadId);
+          try {
+            await LeadsService.addActivity(leadId, text);
+            Toast.show('Activity logged successfully');
+            window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
+            this.open(leadId);
+          } catch (err) {
+            Toast.show(err.message || 'Failed to add activity', 'error');
+          }
         }
       });
     }
@@ -265,6 +316,8 @@ export const LeadDrawer = {
             Toast.show('✓ Note saved to MongoDB');
             window.dispatchEvent(new CustomEvent('techcrm:data-changed'));
             this.open(leadId);
+          } catch (err) {
+            Toast.show(err.message || 'Failed to save note', 'error');
           } finally {
             addNoteBtn.disabled = false;
           }

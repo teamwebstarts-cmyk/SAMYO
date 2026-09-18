@@ -11,10 +11,10 @@ export const LeadsService = {
     isLoadedFromMongo = false;
   },
 
-  // Sync leads with MongoDB Atlas cloud database
+  // Sync all company leads with MongoDB Atlas cloud database
   async fetchFromMongoDB() {
     try {
-      const serverLeads = await ApiService.get('/leads');
+      const serverLeads = await ApiService.get('/leads?scope=team');
       if (Array.isArray(serverLeads)) {
         leadsCache = serverLeads.map(l => ({
           ...l,
@@ -39,6 +39,40 @@ export const LeadsService = {
       console.warn('Could not sync with MongoDB server, using cached data:', err.message);
     }
     return this.getAll();
+  },
+
+  // Fetch team-wide leads or leads for a specific team member
+  async fetchTeamLeads(options = {}) {
+    try {
+      const url = options.memberId ? `/leads?memberId=${options.memberId}` : '/leads?scope=team';
+      const serverLeads = await ApiService.get(url);
+      if (Array.isArray(serverLeads)) {
+        return serverLeads.map(l => ({
+          ...l,
+          id: l._id || l.id
+        }));
+      }
+    } catch (err) {
+      console.warn('Could not fetch team leads:', err.message);
+    }
+    return this.getAll();
+  },
+
+  async reassignLead(id, newOwnerId) {
+    try {
+      const updated = await ApiService.patch(`/leads/${id}/assign`, { newOwnerId });
+      if (updated) {
+        const idx = leadsCache.findIndex(l => l.id === id || l._id === id);
+        if (idx !== -1) {
+          leadsCache[idx] = { ...updated, id: updated._id || updated.id };
+          StorageService.set(StorageService.KEYS.LEADS, leadsCache);
+        }
+        return updated;
+      }
+    } catch (err) {
+      console.warn('Reassign lead error:', err.message);
+      throw err;
+    }
   },
 
   async syncWithServer() {
@@ -82,7 +116,8 @@ export const LeadsService = {
         text: data.notes,
         createdAt: new Date().toISOString(),
         author: AuthService.getCurrentUser()?.name || 'Me'
-      }] : []
+      }] : [],
+      ownerId: data.ownerId || undefined
     };
 
     // 1. Persist directly to MongoDB Atlas
@@ -223,7 +258,7 @@ export const LeadsService = {
     return lead;
   },
 
-  addActivity(id, activityTitle) {
+  async addActivity(id, activityTitle) {
     const lead = this.getById(id);
     if (!lead || !activityTitle.trim()) return null;
 
@@ -236,6 +271,13 @@ export const LeadsService = {
 
     lead.activities = [newAct, ...(lead.activities || [])];
     StorageService.set(StorageService.KEYS.LEADS, leadsCache);
+
+    try {
+      await ApiService.post(`/leads/${id}/activities`, { title: activityTitle.trim() });
+    } catch (err) {
+      console.warn('Could not persist activity to MongoDB:', err.message);
+    }
+
     return lead;
   },
 
@@ -274,6 +316,7 @@ export const LeadsService = {
       new: 0,
       request_sent: 0,
       connected: 0,
+      followup_scheduled: 0,
       qualified: 0,
       proposal: 0,
       won: 0,
@@ -300,6 +343,7 @@ export const LeadsService = {
         newLeads: countByStatus.new || 0,
         requests: countByStatus.request_sent || 0,
         connected: countByStatus.connected || 0,
+        followup_scheduled: countByStatus.followup_scheduled || 0,
         qualified: countByStatus.qualified || 0,
         proposal: countByStatus.proposal || 0,
         won: countByStatus.won || 0,

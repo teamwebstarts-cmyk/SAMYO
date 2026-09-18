@@ -19,6 +19,11 @@ export const Sidebar = {
         badge: leads.filter(l => l.status !== 'lost' && l.status !== 'won').length,
         icon: getIcon('leads', { size: 18 })
       },
+      {
+        path: '/team',
+        label: 'Team',
+        icon: getIcon('user', { size: 18 })
+      },
     ];
 
     return `
@@ -50,19 +55,6 @@ export const Sidebar = {
             <span class="nav-link-text">Settings</span>
           </a>
         </nav>
-
-        <div class="sidebar-footer">
-          <div class="sidebar-outreach-card">
-            <div class="sidebar-outreach-title">Monthly Outreach Target</div>
-            <div class="sidebar-outreach-bar">
-              <div class="sidebar-outreach-progress" style="width: 72%;"></div>
-            </div>
-            <div class="sidebar-outreach-sub">
-              <span>94 / 130 Sent</span>
-              <span style="font-weight: 600; color: var(--primary);">72%</span>
-            </div>
-          </div>
-        </div>
       </aside>
     `;
   },

@@ -193,14 +193,9 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Server error retrieving current user', error: error.message });
   }
 });
-// 1. GET /api/auth/users - Saare registered users ki list fetch karna (Sirf Admin ke liye)
+// 1. GET /api/auth/users - Saare registered team members ki list fetch karna
 router.get('/users', authenticateToken, async (req, res) => {
   try {
-    const isCallerAdmin = req.user.isAdmin || req.user.email === ADMIN_EMAIL;
-    if (!isCallerAdmin) {
-      return res.status(403).json({ message: 'Forbidden: Sirf admin hi user list dekh sakta hai' });
-    }
-
     const users = await User.find({}).select('-password').sort({ createdAt: -1 });
 
     // Har user ki real leads count karein

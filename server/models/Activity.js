@@ -13,7 +13,6 @@ const activitySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['new', 'request_sent', 'connected', 'followup_scheduled', 'qualified', 'proposal', 'won', 'lost', 'system'],
     default: 'new'
   },
   time: {

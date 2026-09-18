@@ -16,6 +16,7 @@ import { Toast } from './components/Toast.js';
 import { LoginPage } from './pages/Login.js';
 import { DashboardPage } from './pages/Dashboard.js';
 import { PipelinePage } from './pages/Pipeline.js';
+import { TeamPage } from './pages/Team.js';
 import { SettingsPage } from './pages/Settings.js';
 
 class App {
@@ -28,6 +29,7 @@ class App {
       '/login': LoginPage,
       '/dashboard': DashboardPage,
       '/pipeline': PipelinePage,
+      '/team': TeamPage,
       '/settings': SettingsPage
     };
 
@@ -151,6 +153,15 @@ class App {
     }
 
     this.currentRoute = path;
+
+    // Fetch team data if navigating to team page
+    if (path === '/team') {
+      try {
+        await TeamPage.fetchData();
+      } catch (e) {
+        console.warn('Team data preload error:', e);
+      }
+    }
 
     // Fetch user's CRM data only when authenticated
     if (AuthService.isAuthenticated() && path !== '/login') {

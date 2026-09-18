@@ -29,12 +29,6 @@ export const Header = {
             <span>${user.role ? user.role.split('/')[0].trim() : 'Team Member'}</span>
           </div>
 
-          <!-- MongoDB Atlas Live Connection Status -->
-          <div id="mongo-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; font-size: 11.5px; font-weight: 600; color: #15803D; cursor: default;" title="Connected to MongoDB Atlas Database">
-            <span id="mongo-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E; display: inline-block;"></span>
-            <span id="mongo-status-text">MongoDB Atlas</span>
-          </div>
-
           <!-- Notification Bell -->
           <div style="position: relative;">
             <button id="notif-toggle-btn" class="header-icon-btn" title="Notifications" aria-label="Notifications">
@@ -120,35 +114,6 @@ export const Header = {
         AuthService.logout();
       });
     }
-
-    // Check MongoDB Live Status
-    const updateMongoStatus = async () => {
-      const badge = document.getElementById('mongo-connection-badge');
-      const dot = document.getElementById('mongo-status-dot');
-      const text = document.getElementById('mongo-status-text');
-      if (!badge || !dot || !text) return;
-
-      const health = await ApiService.checkHealth();
-      if (health.ok && health.data?.database?.includes('Connected')) {
-        badge.style.background = '#F0FDF4';
-        badge.style.borderColor = '#BBF7D0';
-        badge.style.color = '#15803D';
-        dot.style.background = '#22C55E';
-        dot.style.boxShadow = '0 0 6px #22C55E';
-        text.textContent = 'MongoDB Atlas';
-        badge.title = `Connected to MongoDB Atlas Cloud Database (${health.data?.counts?.leads ?? 0} leads stored)`;
-      } else {
-        badge.style.background = '#FEF2F2';
-        badge.style.borderColor = '#FECACA';
-        badge.style.color = '#B91C1C';
-        dot.style.background = '#EF4444';
-        dot.style.boxShadow = 'none';
-        text.textContent = 'MongoDB Offline';
-        badge.title = 'Cannot reach MongoDB Atlas backend server';
-      }
-    };
-    updateMongoStatus();
-    window.addEventListener('techcrm:data-changed', updateMongoStatus);
 
     // Global search handler
     const searchInput = document.getElementById('global-search-input');
